@@ -120,7 +120,7 @@ export function RadarHeader({
           slot3Unlocked={slot3Unlocked}
           onOpenFeedback={onOpenFeedback}
           onBlockedFeedbackClick={onBlockedFeedbackClick}
-          className="absolute bottom-11 right-0 shadow-2xl"
+          className="absolute top-10 right-0 shadow-2xl mt-1.5"
         />
 
         <button

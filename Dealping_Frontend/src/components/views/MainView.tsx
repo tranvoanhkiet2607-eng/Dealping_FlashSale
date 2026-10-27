@@ -82,7 +82,7 @@ export function MainView({
   return (
     <div className="flex-1 min-h-0 max-w-7xl w-full mx-auto px-4 lg:px-8 py-3 lg:py-6 flex flex-col lg:flex-row items-stretch gap-6 relative z-10">
       {/* Radar Left Panel: Centered on mobile, beautifully framed on desktop */}
-      <div className="w-full lg:w-[400px] xl:w-[440px] lg:shrink-0 flex flex-col lg:self-stretch">
+      <div className="w-full lg:w-[400px] xl:w-[440px] lg:shrink-0 flex flex-col lg:self-stretch relative z-30">
         <div className="lg:bg-white/85 dark:lg:bg-[#101322]/80 lg:border lg:border-slate-200/80 dark:lg:border-white/10 lg:backdrop-blur-xl lg:rounded-3xl lg:shadow-xl dark:lg:shadow-2xl flex-1 flex flex-col relative overflow-visible lg:overflow-hidden transition-all duration-300">
           <RadarHeader
             bubbles={bubbles}
