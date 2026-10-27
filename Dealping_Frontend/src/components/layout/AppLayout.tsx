@@ -35,28 +35,28 @@ export function AppLayout({
               className={`orb-1 absolute -top-16 -left-16 w-64 lg:w-96 h-64 lg:h-96 rounded-full ${
                 isDark
                   ? "bg-gradient-to-tr from-pink-600 to-rose-500 opacity-65 mix-blend-screen"
-                  : "bg-gradient-to-tr from-pink-500 to-rose-400 opacity-70 mix-blend-multiply"
+                  : "bg-gradient-to-tr from-pink-300 to-rose-200 opacity-35"
               }`}
             />
             <div
               className={`orb-2 absolute top-1/4 -right-20 w-72 lg:w-110 h-72 lg:h-110 rounded-full ${
                 isDark
                   ? "bg-gradient-to-bl from-purple-600 via-indigo-600 to-blue-600 opacity-70 mix-blend-screen"
-                  : "bg-gradient-to-bl from-purple-600 via-indigo-500 to-blue-500 opacity-70 mix-blend-multiply"
+                  : "bg-gradient-to-bl from-purple-300 via-indigo-200 to-blue-200 opacity-35"
               }`}
             />
             <div
               className={`orb-3 absolute -bottom-16 left-8 w-64 lg:w-96 h-64 lg:h-96 rounded-full ${
                 isDark
                   ? "bg-gradient-to-tr from-amber-500 via-orange-500 to-rose-600 opacity-60 mix-blend-screen"
-                  : "bg-gradient-to-tr from-amber-400 via-orange-400 to-rose-400 opacity-65 mix-blend-multiply"
+                  : "bg-gradient-to-tr from-amber-200 via-orange-200 to-rose-200 opacity-30"
               }`}
             />
             <div
               className={`orb-4 absolute top-1/2 left-1/4 w-56 lg:w-80 h-56 lg:h-80 rounded-full ${
                 isDark
                   ? "bg-gradient-to-r from-cyan-500 to-sky-600 opacity-60 mix-blend-screen"
-                  : "bg-gradient-to-r from-cyan-400 to-sky-500 opacity-60 mix-blend-multiply"
+                  : "bg-gradient-to-r from-cyan-200 to-sky-200 opacity-30"
               }`}
             />
           </div>

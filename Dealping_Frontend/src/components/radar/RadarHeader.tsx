@@ -42,18 +42,18 @@ export function RadarHeader({
       className="relative h-[280px] lg:h-full w-full flex flex-col items-center justify-center lg:justify-between shrink-0 pt-4 lg:pt-5 lg:pb-5 lg:px-6"
     >
       {/* Desktop Card Header */}
-      <div className="hidden lg:flex items-center justify-between w-full pb-3.5 border-b border-white/10 shrink-0">
+      <div className="hidden lg:flex items-center justify-between w-full pb-3.5 border-b border-slate-200/80 dark:border-white/10 shrink-0">
         <div className="flex items-center space-x-2">
           <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
           </span>
-          <span className="text-xs font-black tracking-wider uppercase text-white/90">
+          <span className="text-xs font-black tracking-wider uppercase text-slate-800 dark:text-white/90">
             Trạm Radar 24/7
           </span>
         </div>
-        <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-semibold text-emerald-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/15 border border-emerald-300 dark:border-emerald-500/30 text-[10px] font-bold text-emerald-800 dark:text-emerald-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse"></span>
           <span>Đang quét trực tuyến</span>
         </div>
       </div>
@@ -142,12 +142,12 @@ export function RadarHeader({
       </div>
 
       {/* Desktop Card Footer Controls */}
-      <div className="hidden lg:flex w-full flex-col gap-2.5 pt-3.5 border-t border-white/10 shrink-0">
+      <div className="hidden lg:flex w-full flex-col gap-2.5 pt-3.5 border-t border-slate-200/80 dark:border-white/10 shrink-0">
         {/* Test Siren Button */}
         <button
           onClick={onTestAlarm}
           disabled={alarmLoading}
-          className="w-full py-2.5 px-3.5 rounded-2xl bg-gradient-to-r from-red-500/15 via-rose-500/20 to-amber-500/15 hover:from-red-500/25 hover:via-rose-500/30 hover:to-amber-500/25 border border-red-500/30 hover:border-red-500/60 text-white flex items-center justify-between text-xs font-bold transition-all shadow-md active:scale-[0.98] cursor-pointer group"
+          className="w-full py-2.5 px-3.5 rounded-2xl bg-gradient-to-r from-red-500/10 via-rose-500/15 to-amber-500/10 dark:from-red-500/15 dark:via-rose-500/20 dark:to-amber-500/15 hover:from-red-500/20 hover:to-amber-500/20 border border-red-200 dark:border-red-500/30 text-slate-800 dark:text-white flex items-center justify-between text-xs font-bold transition-all shadow-sm active:scale-[0.98] cursor-pointer group"
           title="Nhấn để test chuông còi báo động sập giá"
         >
           <div className="flex items-center space-x-2">
@@ -160,11 +160,11 @@ export function RadarHeader({
             >
               🚨
             </span>
-            <span className="text-slate-200 group-hover:text-white transition-colors">
+            <span className="text-red-700 dark:text-slate-200 group-hover:text-red-800 dark:group-hover:text-white transition-colors font-bold">
               Thử chuông còi báo sập giá
             </span>
           </div>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 font-semibold">
+          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/30 font-bold">
             {alarmLoading ? "Đang thử..." : "Bấm thử"}
           </span>
         </button>
@@ -178,7 +178,7 @@ export function RadarHeader({
               onBlockedFeedbackClick()
             }
           }}
-          className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white flex items-center justify-between text-[11px] font-semibold transition-all cursor-pointer"
+          className="w-full py-2 px-3 rounded-xl bg-slate-100/80 hover:bg-slate-200/80 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200/80 dark:border-white/10 text-slate-700 hover:text-slate-900 dark:text-white/80 dark:hover:text-white flex items-center justify-between text-[11px] font-semibold transition-all cursor-pointer shadow-xs"
         >
           <div className="flex items-center space-x-1.5">
             <span>{slot3Unlocked ? "👑" : "💬"}</span>
@@ -186,17 +186,17 @@ export function RadarHeader({
               {slot3Unlocked ? "VIP Đã Mở Khóa Ô #3" : "Góp ý để mở Ô #3 VIP"}
             </span>
           </div>
-          <span className="text-[10px] text-amber-400 font-bold">
+          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-black">
             {slot3Unlocked ? "Xem góp ý →" : "Mở ngay →"}
           </span>
         </button>
 
         {/* Live Status & Platforms */}
-        <div className="flex items-center justify-between text-[10px] text-slate-400 px-1 pt-0.5">
+        <div className="flex items-center justify-between text-[10px] text-slate-600 dark:text-slate-400 px-1 pt-0.5 font-medium">
           <span className="flex items-center space-x-1">
             <span>⚡ Chu kỳ: 5s/lần</span>
           </span>
-          <span className="text-pink-400/90 font-medium">Shopee • TikTok • Lazada</span>
+          <span className="text-pink-600 dark:text-pink-400/90 font-semibold">Shopee • TikTok • Lazada</span>
         </div>
       </div>
     </div>

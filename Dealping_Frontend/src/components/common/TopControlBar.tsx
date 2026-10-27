@@ -40,7 +40,13 @@ export function TopControlBar({
       <div className="pt-10 pb-2 z-30 w-full lg:hidden" />
 
       {/* Top Navbar */}
-      <header className="absolute top-12 lg:relative lg:top-auto inset-x-4 lg:inset-x-0 lg:px-8 lg:py-3.5 flex items-center justify-between z-40 pointer-events-none lg:pointer-events-auto lg:border-b lg:border-white/10 lg:bg-[#0c0e17]/80 lg:backdrop-blur-xl shrink-0">
+      <header
+        className={`absolute top-12 lg:relative lg:top-auto inset-x-4 lg:inset-x-0 lg:px-8 lg:py-3.5 flex items-center justify-between z-40 pointer-events-none lg:pointer-events-auto lg:border-b lg:backdrop-blur-xl shrink-0 transition-colors duration-300 ${
+          isDark
+            ? "lg:border-white/10 lg:bg-[#0c0e17]/80"
+            : "lg:border-slate-200/80 lg:bg-white/85 shadow-sm shadow-slate-200/40"
+        }`}
+      >
         {/* Left Side: Desktop Logo + Mobile Dark Toggle */}
         <div className="flex items-center space-x-6 pointer-events-auto">
           {/* Brand Logo on Desktop */}
@@ -48,14 +54,26 @@ export function TopControlBar({
             onClick={() => onNavigate && onNavigate("main")}
             className="hidden lg:flex items-center space-x-2.5 cursor-pointer select-none group"
           >
-            <div className="w-8 h-8 rounded-xl apple-glow-btn flex items-center justify-center text-sm shadow-md group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-xl apple-glow-btn flex items-center justify-center text-sm shadow-md group-hover:scale-105 transition-transform text-white">
               📡
             </div>
             <div className="flex items-center space-x-1.5">
-              <span className="text-sm font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-300">
+              <span
+                className={`text-sm font-black tracking-wide text-transparent bg-clip-text ${
+                  isDark
+                    ? "bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-300"
+                    : "bg-gradient-to-r from-purple-700 via-pink-600 to-indigo-700"
+                }`}
+              >
                 DEALPING
               </span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-400 font-extrabold uppercase border border-pink-400/30">
+              <span
+                className={`text-[9px] px-1.5 py-0.5 rounded-full font-extrabold uppercase border ${
+                  isDark
+                    ? "bg-pink-500/20 text-pink-400 border-pink-400/30"
+                    : "bg-pink-100 text-pink-700 border-pink-300"
+                }`}
+              >
                 FLASHSALE
               </span>
             </div>
@@ -72,8 +90,10 @@ export function TopControlBar({
                     onClick={() => onNavigate(tab.id)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 flex items-center space-x-1.5 cursor-pointer ${
                       isActive
-                        ? "apple-glow-btn text-white shadow-md shadow-purple-500/20"
-                        : "text-slate-400 hover:text-white hover:bg-white/10"
+                        ? "apple-glow-btn text-white shadow-md shadow-purple-500/25 ring-1 ring-white/20"
+                        : isDark
+                          ? "text-slate-400 hover:text-white hover:bg-white/10"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/70"
                     }`}
                   >
                     <span className="text-xs">{tab.icon}</span>
@@ -134,11 +154,11 @@ export function TopControlBar({
               className={`hidden lg:flex px-3 py-1.5 rounded-full backdrop-blur text-xs font-black border items-center space-x-1.5 shadow-sm ${
                 isDark
                   ? "bg-white/10 border-white/20 text-purple-200"
-                  : "bg-white/90 border-slate-300 text-purple-900"
+                  : "bg-slate-100 border-slate-200 text-slate-700"
               }`}
             >
-              <span className="opacity-75">Giới hạn Radar:</span>
-              <span className="font-extrabold text-pink-400">{slotText}</span>
+              <span className={isDark ? "opacity-75" : "text-slate-600"}>Giới hạn Radar:</span>
+              <span className={`font-extrabold ${isDark ? "text-pink-400" : "text-pink-600"}`}>{slotText}</span>
             </div>
           )}
 
@@ -148,7 +168,7 @@ export function TopControlBar({
             className={`hidden lg:flex items-center space-x-1.5 px-3 py-1.5 rounded-full backdrop-blur border shadow-sm active:scale-95 transition-all cursor-pointer ${
               isDark
                 ? "bg-white/15 border-white/25 text-white hover:bg-white/25"
-                : "bg-white/90 border-slate-300 text-slate-900 shadow-slate-200 hover:bg-white"
+                : "bg-slate-100 hover:bg-slate-200/80 border-slate-200/90 text-slate-800 shadow-slate-200/50"
             }`}
             title="Đổi giao diện Sáng / Tối"
           >
@@ -165,17 +185,13 @@ export function TopControlBar({
               className={`px-2.5 lg:px-3 py-1 lg:py-1.5 rounded-full backdrop-blur text-[10px] lg:text-xs font-black border cursor-pointer active:scale-95 transition shadow-sm flex items-center space-x-1 ${
                 isDark
                   ? "bg-white/20 lg:bg-white/15 border-white/30 text-white hover:bg-white/25"
-                  : "bg-white/90 border-slate-300 text-slate-950 shadow-slate-200 hover:bg-white"
+                  : "bg-slate-100 hover:bg-slate-200/80 border-slate-200/90 text-slate-800 shadow-slate-200/50"
               }`}
             >
-              <span
-                className={isDark ? "text-white" : "text-slate-950 font-black"}
-              >
+              <span>
                 Hướng dẫn
               </span>
-              <span
-                className={isDark ? "text-white/70" : "text-slate-900 font-black"}
-              >
+              <span>
                 →
               </span>
             </button>

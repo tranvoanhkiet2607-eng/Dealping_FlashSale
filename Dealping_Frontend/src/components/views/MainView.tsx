@@ -83,7 +83,7 @@ export function MainView({
     <div className="flex-1 min-h-0 max-w-7xl w-full mx-auto px-4 lg:px-8 py-3 lg:py-6 flex flex-col lg:flex-row items-stretch gap-6 relative z-10">
       {/* Radar Left Panel: Centered on mobile, beautifully framed on desktop */}
       <div className="w-full lg:w-[400px] xl:w-[440px] lg:shrink-0 flex flex-col lg:self-stretch">
-        <div className="lg:apple-glass lg:rounded-3xl lg:border lg:border-white/10 lg:shadow-2xl flex-1 flex flex-col relative overflow-hidden">
+        <div className="lg:bg-white/85 dark:lg:bg-[#101322]/80 lg:border lg:border-slate-200/80 dark:lg:border-white/10 lg:backdrop-blur-xl lg:rounded-3xl lg:shadow-xl dark:lg:shadow-2xl flex-1 flex flex-col relative overflow-hidden transition-all duration-300">
           <RadarHeader
             bubbles={bubbles}
             onPopBubble={onPopBubble}
@@ -104,20 +104,20 @@ export function MainView({
       </div>
 
       {/* Sheet containing Slot Cards: Bottom sheet on mobile, right panel on desktop */}
-      <div className="flex-1 min-h-0 apple-sheet lg:apple-glass rounded-t-[36px] lg:rounded-3xl lg:border lg:border-white/10 lg:shadow-2xl px-5 lg:px-7 pt-3 lg:pt-6 pb-12 lg:pb-6 shadow-[0_-10px_35px_rgba(0,0,0,0.12)] flex flex-col z-10 lg:self-stretch">
+      <div className="flex-1 min-h-0 apple-sheet lg:bg-white/85 dark:lg:bg-[#101322]/80 rounded-t-[36px] lg:rounded-3xl lg:border lg:border-slate-200/80 dark:lg:border-white/10 lg:backdrop-blur-xl lg:shadow-xl dark:lg:shadow-2xl px-5 lg:px-7 pt-3 lg:pt-6 pb-12 lg:pb-6 shadow-[0_-10px_35px_rgba(0,0,0,0.12)] flex flex-col z-10 lg:self-stretch transition-all duration-300">
         <div className="w-10 h-1.5 bg-slate-400/40 rounded-full mx-auto mb-2 lg:hidden" />
 
-        <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-white/5 shrink-0">
+        <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-200/80 dark:border-white/5 shrink-0">
           <div>
             <div className="flex items-center space-x-2">
-              <h3 className="text-lg lg:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-amber-300">
+              <h3 className="text-lg lg:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 dark:from-pink-400 dark:to-amber-300">
                 Săn Deal Siêu Tốc
               </h3>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-400 text-[10px] font-bold border border-pink-400/20">
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-pink-100 dark:bg-pink-500/15 text-pink-700 dark:text-pink-400 text-[10px] font-bold border border-pink-200 dark:border-pink-400/20">
                 Tự động bắt đáy 24/7
               </span>
             </div>
-            <p className="text-[10px] opacity-80 font-semibold text-pink-500 mt-0.5">
+            <p className="text-[10px] opacity-80 font-semibold text-pink-600 dark:text-pink-500 mt-0.5">
               Tối đa {allowedSlots} ô{" "}
               {slot3Unlocked
                 ? "(Đã mở khóa VIP Ô #3)"
@@ -126,7 +126,7 @@ export function MainView({
                   : "(Chạm 10 bóng quanh Radar để mở Ô #2)"}
             </p>
           </div>
-          <span className="px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 text-[10px] lg:text-[11px] font-bold border border-purple-500/30">
+          <span className="px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-[10px] lg:text-[11px] font-bold border border-purple-200 dark:border-purple-500/30">
             {activeCount}/{allowedSlots} ô đang chạy
           </span>
         </div>
@@ -249,7 +249,7 @@ export function MainView({
             <SlotCard
               slotNum={1}
               label="📍 Ô TÌM SỐ 1"
-              labelClass="bg-purple-500/20 text-purple-400"
+              labelClass="bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-transparent"
               active={slot1.active}
               input={slot1.input}
               inputRef={slot1InputRef}
@@ -289,12 +289,12 @@ export function MainView({
         </div>
 
         {/* Desktop Helper Footer */}
-        <div className="mt-3 pt-3 border-t border-white/10 hidden lg:flex items-center justify-between text-xs text-slate-400 shrink-0">
+        <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-white/10 hidden lg:flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 shrink-0 font-medium">
           <div className="flex items-center space-x-2">
             <span className="text-sm">🛡️</span>
             <span className="text-[11px]">DealPing không can thiệp tài khoản - Chỉ giám sát giá công khai & hú còi</span>
           </div>
-          <div className="flex items-center space-x-1.5 text-[10px] text-pink-400/90 font-semibold">
+          <div className="flex items-center space-x-1.5 text-[10px] text-pink-600 dark:text-pink-400/90 font-semibold">
             <span>Shopee • TikTok Shop • Lazada</span>
           </div>
         </div>
