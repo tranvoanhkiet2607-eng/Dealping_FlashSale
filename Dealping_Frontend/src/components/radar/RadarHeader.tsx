@@ -120,6 +120,7 @@ export function RadarHeader({
           slot3Unlocked={slot3Unlocked}
           onOpenFeedback={onOpenFeedback}
           onBlockedFeedbackClick={onBlockedFeedbackClick}
+          className="absolute bottom-11 right-0 shadow-2xl"
         />
 
         <button
@@ -127,7 +128,7 @@ export function RadarHeader({
           className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 border ${
             isMenuOpen
               ? "bg-white text-black border-transparent scale-90"
-              : "apple-glass text-white border-white/40 hover:scale-105 active:scale-95"
+              : "apple-glass text-slate-800 dark:text-white border-slate-300 dark:border-white/40 hover:scale-105 active:scale-95"
           }`}
           title="Menu Chức Năng"
         >

@@ -169,9 +169,14 @@ export default function App() {
         onToggleTheme={() => setIsDark(!isDark)}
         view={view}
         slot3Unlocked={slot3Unlocked}
-        slot2BubbleUnlocked={slot2BubbleUnlocked}
-        onRestartTutorial={restartTutorial}
-        onNavigate={setView}
+        onRestartTutorial={() => {
+          setIsMenuOpen(false)
+          restartTutorial()
+        }}
+        onNavigate={(newView) => {
+          setIsMenuOpen(false)
+          setView(newView)
+        }}
       />
 
       {/* View Router */}

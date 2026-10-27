@@ -28,9 +28,16 @@ export function MenuPopup({
   if (!isOpen) return null
 
   return (
-    <div
-      className={`${className} menu-popup backdrop-blur-md rounded-[24px] p-2 w-48 flex flex-col space-y-1 animate-slide-down-notification z-50`}
-    >
+    <>
+      {/* Invisible backdrop to dismiss menu on tap outside */}
+      <div
+        className="fixed inset-0 z-40 bg-black/10 dark:bg-black/20"
+        onClick={onClose}
+      />
+
+      <div
+        className={`${className} menu-popup backdrop-blur-md rounded-[24px] p-2 w-48 flex flex-col space-y-1 animate-slide-down-notification z-50`}
+      >
       <button
         onClick={() => {
           onNavigate("wishlist")
@@ -125,5 +132,6 @@ export function MenuPopup({
         </div>
       </button>
     </div>
+    </>
   )
 }

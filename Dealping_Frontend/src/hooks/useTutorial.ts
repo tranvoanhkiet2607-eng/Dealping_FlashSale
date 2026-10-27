@@ -32,8 +32,8 @@ export function useTutorial() {
 
   const restartTutorial = useCallback(() => {
     localStorage.removeItem(TUTORIAL_KEY)
-    setSpotlightStep("none")
-    setView("welcome")
+    setView("main")
+    setSpotlightStep("slot1")
   }, [])
 
   return {
