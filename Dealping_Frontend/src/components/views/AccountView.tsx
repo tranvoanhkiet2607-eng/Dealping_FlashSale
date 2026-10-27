@@ -19,9 +19,14 @@ export function AccountView({
   isMenuOpen,
 }: AccountViewProps) {
   return (
-    <div className="flex-1 flex flex-col relative overflow-hidden z-10 pt-24 px-5">
+    <div className="flex-1 flex flex-col relative overflow-hidden z-10 pt-24 lg:pt-6 px-5 lg:px-8 max-w-xl mx-auto w-full">
       <div className="flex items-start justify-between mb-1">
-        <h2 className="text-lg font-black">👤 Tài Khoản</h2>
+        <div>
+          <h2 className="text-lg lg:text-xl font-black">👤 Tài Khoản</h2>
+          <p className="text-[10px] lg:text-xs text-white/60 mb-2">
+            Quản lý thông tin & hạng thành viên
+          </p>
+        </div>
         <button
           onClick={onToggleMenu}
           className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 border z-50 ${
@@ -39,9 +44,6 @@ export function AccountView({
           </div>
         </button>
       </div>
-      <p className="text-[10px] text-white/60 mb-4">
-        Quản lý thông tin & hạng thành viên
-      </p>
 
       <div className="flex-1 flex flex-col items-center justify-center">
         <div className="w-20 h-20 bg-gradient-to-tr from-pink-500 to-purple-600 rounded-full mb-4 flex items-center justify-center text-3xl shadow-lg border-2 border-white/20">

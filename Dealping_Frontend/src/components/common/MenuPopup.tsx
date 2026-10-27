@@ -96,51 +96,34 @@ export function MenuPopup({
       {/* Mục Đánh giá & Góp ý nhận quà Slot 3 */}
       <div className="menu-divider h-px my-1 mx-2" />
 
-      {canLeaveFeedback ? (
-        <button
-          onClick={() => {
-            onOpenFeedback()
-            onClose()
-          }}
-          className="menu-feedback flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer text-left w-full active:scale-98"
-        >
-          <span className="text-base shrink-0">⭐</span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center space-x-1.5">
-              <span className="text-xs font-bold">
-                {slot3Unlocked ? "Đánh giá & Góp ý" : "Đánh giá nhận Ô #3"}
+      <button
+        onClick={() => {
+          onNavigate("feedback")
+          onClose()
+        }}
+        className={`menu-feedback flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer text-left w-full active:scale-98 ${
+          currentView === "feedback" ? "bg-amber-500/20 text-amber-300 font-bold" : ""
+        }`}
+      >
+        <span className="text-base shrink-0">⭐</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center space-x-1.5">
+            <span className="text-xs font-bold">
+              {slot3Unlocked ? "Lịch sử đánh giá & Góp ý" : "Đánh giá nhận Ô #3"}
+            </span>
+            {!slot3Unlocked && (
+              <span className="text-[8px] bg-red-500 text-white font-extrabold px-1.5 py-0.2 rounded-full animate-pulse">
+                HOT
               </span>
-              {!slot3Unlocked && (
-                <span className="text-[8px] bg-red-500 text-white font-extrabold px-1.5 py-0.2 rounded-full animate-pulse">
-                  HOT
-                </span>
-              )}
-            </div>
-            <p className="menu-feedback-sub text-[8px] truncate font-normal">
-              {slot3Unlocked
-                ? "Chia sẻ cảm nghĩ về app"
-                : "Phần thưởng: Mở khóa Ô #3"}
-            </p>
+            )}
           </div>
-        </button>
-      ) : (
-        <button
-          onClick={() => {
-            onBlockedFeedbackClick()
-            onClose()
-          }}
-          className="menu-feedback-locked flex items-center space-x-3 px-3 py-2 rounded-xl cursor-pointer text-left w-full"
-          title="Cần theo dõi ít nhất 1 sản phẩm để mở khóa chức năng đánh giá"
-        >
-          <span className="text-base opacity-60 shrink-0">🔒</span>
-          <div className="min-w-0 flex-1">
-            <span className="text-xs font-semibold">Đánh giá nhận Ô #3</span>
-            <p className="text-[8px] truncate font-normal">
-              Cần theo dõi ít nhất 1 món
-            </p>
-          </div>
-        </button>
-      )}
+          <p className="menu-feedback-sub text-[8px] truncate font-normal">
+            {slot3Unlocked
+              ? "Xem, thêm, sửa, xóa đánh giá"
+              : "Phần thưởng: Mở khóa vĩnh viễn Ô #3"}
+          </p>
+        </div>
+      </button>
     </div>
   )
 }

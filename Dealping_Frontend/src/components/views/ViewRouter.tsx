@@ -6,13 +6,16 @@ import {
   BubbleData,
   Rank,
   ChartItem,
+  ReviewItem,
 } from "../../types"
+import { TrackedProductOption } from "../../hooks/useFeedback"
 import { OnboardingView } from "./OnboardingView"
 import { WelcomeView } from "./WelcomeView"
 import { WishlistView } from "./WishlistView"
 import { PriceChartView } from "./PriceChartView"
 import { AccountView } from "./AccountView"
 import { MainView } from "./MainView"
+import { FeedbackView } from "./FeedbackView"
 
 interface ViewRouterProps {
   view: View
@@ -69,7 +72,23 @@ interface ViewRouterProps {
   onTestAlarm: () => void
   alarmLoading: boolean
 
-  // Feedback
+  // Feedback & Review CRUD
+  trackedProducts: TrackedProductOption[]
+  selectedProductId: string
+  onSelectProduct: (id: string) => void
+  reviews: ReviewItem[]
+  feedbackRating: number
+  onRatingChange: (star: number) => void
+  feedbackText: string
+  onFeedbackTextChange: (text: string) => void
+  contact: string
+  onContactChange: (contact: string) => void
+  editingReviewId: string | null
+  onSendFeedback: () => void
+  onStartEditReview: (review: ReviewItem) => void
+  onCancelEditReview: () => void
+  onDeleteReview: (id: string) => void
+  isSendingFeedback: boolean
   canLeaveFeedback: boolean
   onOpenFeedback: () => void
   onBlockedFeedbackClick: () => void
@@ -113,6 +132,22 @@ export function ViewRouter({
   onCloseBumpSheet,
   onTestAlarm,
   alarmLoading,
+  trackedProducts,
+  selectedProductId,
+  onSelectProduct,
+  reviews,
+  feedbackRating,
+  onRatingChange,
+  feedbackText,
+  onFeedbackTextChange,
+  contact,
+  onContactChange,
+  editingReviewId,
+  onSendFeedback,
+  onStartEditReview,
+  onCancelEditReview,
+  onDeleteReview,
+  isSendingFeedback,
   canLeaveFeedback,
   onOpenFeedback,
   onBlockedFeedbackClick,
@@ -206,6 +241,32 @@ export function ViewRouter({
           onCloseUnlockModal={onCloseUnlockModal}
           showBumpSheet={showBumpSheet}
           onCloseBumpSheet={onCloseBumpSheet}
+        />
+      )
+
+    case "feedback":
+      return (
+        <FeedbackView
+          trackedProducts={trackedProducts}
+          selectedProductId={selectedProductId}
+          onSelectProduct={onSelectProduct}
+          reviews={reviews}
+          rating={feedbackRating}
+          onRatingChange={onRatingChange}
+          feedbackText={feedbackText}
+          onFeedbackTextChange={onFeedbackTextChange}
+          contact={contact}
+          onContactChange={onContactChange}
+          editingReviewId={editingReviewId}
+          onSubmit={onSendFeedback}
+          onStartEdit={onStartEditReview}
+          onCancelEdit={onCancelEditReview}
+          onDeleteReview={onDeleteReview}
+          isSending={isSendingFeedback}
+          slot3Unlocked={slot3Unlocked}
+          onToggleMenu={onToggleMenu}
+          isMenuOpen={isMenuOpen}
+          onNavigateToMain={() => onNavigate("main")}
         />
       )
 

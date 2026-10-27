@@ -172,7 +172,7 @@ async function runPriceCheckBot() {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`[CRON] Hoàn thành chu kỳ rà soát giá trong ${elapsed}s.`);
   } catch (err) {
-    console.error("[CRON] Lỗi chung khi chạy cron job quét giá:", err);
+    console.warn("[CRON] Thông báo quét giá (đang kết nối DB):", err.message || "Đang thử lại chu kỳ sau...");
   } finally {
     isScanning = false;
   }

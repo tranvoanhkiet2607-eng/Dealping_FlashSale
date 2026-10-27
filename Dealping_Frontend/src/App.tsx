@@ -108,6 +108,9 @@ export default function App() {
 
   // 8. Feedback & Slot 3 Unlock Engine
   const {
+    trackedProducts,
+    selectedProductId,
+    setSelectedProductId,
     showFeedbackModal,
     setShowFeedbackModal,
     showSlot3Modal,
@@ -118,17 +121,20 @@ export default function App() {
     setFeedbackText,
     feedbackContact,
     setFeedbackContact,
+    editingReviewId,
+    reviews,
     isSendingFeedback,
     canLeaveFeedback,
     handleSendFeedback,
+    handleStartEdit,
+    handleCancelEdit,
+    handleDeleteReview,
     handleBlockedFeedbackClick,
   } = useFeedback({
     showToast,
     slot1,
     slot2,
     slot3,
-    activeCount,
-    hasEverTracked,
     wishlistItems,
     onUnlockSlot3: () => setSlot3Unlocked(true),
   })
@@ -165,6 +171,7 @@ export default function App() {
         slot3Unlocked={slot3Unlocked}
         slot2BubbleUnlocked={slot2BubbleUnlocked}
         onRestartTutorial={restartTutorial}
+        onNavigate={setView}
       />
 
       {/* View Router */}
@@ -212,9 +219,25 @@ export default function App() {
         }}
         onTestAlarm={() => handleTestAlarm(slot1, slot2, lastActiveSlot)}
         alarmLoading={alarmLoading}
+        trackedProducts={trackedProducts}
+        selectedProductId={selectedProductId}
+        onSelectProduct={setSelectedProductId}
+        reviews={reviews}
+        feedbackRating={feedbackRating}
+        onRatingChange={setFeedbackRating}
+        feedbackText={feedbackText}
+        onFeedbackTextChange={setFeedbackText}
+        contact={feedbackContact}
+        onContactChange={setFeedbackContact}
+        editingReviewId={editingReviewId}
+        onSendFeedback={handleSendFeedback}
+        onStartEditReview={handleStartEdit}
+        onCancelEditReview={handleCancelEdit}
+        onDeleteReview={handleDeleteReview}
+        isSendingFeedback={isSendingFeedback}
         canLeaveFeedback={canLeaveFeedback}
-        onOpenFeedback={() => setShowFeedbackModal(true)}
-        onBlockedFeedbackClick={handleBlockedFeedbackClick}
+        onOpenFeedback={() => setView("feedback")}
+        onBlockedFeedbackClick={() => setView("feedback")}
       />
 
       {/* Consolidated Modals */}

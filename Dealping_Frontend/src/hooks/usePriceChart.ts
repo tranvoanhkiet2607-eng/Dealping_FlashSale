@@ -150,13 +150,22 @@ export function usePriceChart({
 
           if (!chartAdded) {
             const base = currentPrice || 100000
+            const orig = item.originalPrice ? Number(item.originalPrice) : undefined
+            const voucher = item.voucherPrice ? Number(item.voucherPrice) : null
+            const target = item.targetPrice ? pricingService.parseVND(item.targetPrice) : undefined
+
             newCharts.push({
               id: itemId ? String(itemId) : Math.random().toString(),
               name: productName,
               url,
               imageUrl: item.imageUrl || item.productImage,
-              isBottom: false,
-              data: chartService.generateMockDayData(base),
+              isBottom: voucher ? voucher <= base : false,
+              data: chartService.buildRealPricePoints({
+                currentPrice: base,
+                originalPrice: orig && orig > base ? orig : undefined,
+                voucherPrice: voucher,
+                targetPrice: target,
+              }),
             })
           }
         }

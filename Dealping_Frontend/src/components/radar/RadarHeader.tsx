@@ -39,36 +39,62 @@ export function RadarHeader({
   return (
     <div
       id="radar-header-area"
-      className="relative h-[280px] w-full flex items-center justify-center shrink-0 pt-4"
+      className="relative h-[280px] lg:h-full w-full flex flex-col items-center justify-center lg:justify-between shrink-0 pt-4 lg:pt-5 lg:pb-5 lg:px-6"
     >
-      <div className="absolute w-40 h-40 rounded-full border-2 border-white/30 animate-ping opacity-20 pointer-events-none" />
-      <div className="absolute w-28 h-28 rounded-full border border-pink-400/40 animate-pulse opacity-30 pointer-events-none" />
-
-      {/* Floating Bubbles */}
-      <RadarBubbles
-        bubbles={bubbles}
-        onPop={onPopBubble}
-        onExpire={onExpireBubble}
-        spotlightStep={spotlightStep}
-      />
-
-      {/* Radar Central Pill */}
-      <div className="relative z-10 px-4 py-2 rounded-2xl apple-glow-btn text-white shadow-xl flex items-center space-x-2.5 border border-white/40">
-        <span className="text-base">📡</span>
-        <div className="text-center flex-1">
-          <div className="text-[11px] font-black leading-tight">
-            Radar Săn Deal Đáy
-          </div>
-          <div className="text-[9px] text-white/90">Quét 24/7</div>
+      {/* Desktop Card Header */}
+      <div className="hidden lg:flex items-center justify-between w-full pb-3.5 border-b border-white/10 shrink-0">
+        <div className="flex items-center space-x-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+          </span>
+          <span className="text-xs font-black tracking-wider uppercase text-white/90">
+            Trạm Radar 24/7
+          </span>
         </div>
-        <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+        <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-semibold text-emerald-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Đang quét trực tuyến</span>
+        </div>
       </div>
 
-      {/* Test Siren Button (Bottom Left) */}
+      {/* Center Radar Scanner Area */}
+      <div className="relative flex-1 w-full max-w-[340px] flex items-center justify-center my-auto min-h-[200px] lg:min-h-[260px]">
+        {/* Pulsing Concentric Radar Rings */}
+        <div className="absolute w-44 h-44 lg:w-56 lg:h-56 rounded-full border-2 border-purple-500/20 animate-ping opacity-25 pointer-events-none" />
+        <div className="absolute w-32 h-32 lg:w-40 lg:h-40 rounded-full border border-pink-400/35 animate-pulse opacity-40 pointer-events-none" />
+        <div className="absolute w-20 h-20 lg:w-26 lg:h-26 rounded-full border border-indigo-400/30 pointer-events-none" />
+
+        {/* Sweeping Sonar Beam on Desktop */}
+        <div className="hidden lg:block absolute w-48 h-48 lg:w-56 lg:h-56 rounded-full pointer-events-none opacity-25 bg-[conic-gradient(from_0deg,transparent_0deg,transparent_280deg,rgba(236,72,153,0.45)_360deg)] animate-radar-sweep" />
+
+        {/* Floating Bubbles */}
+        <RadarBubbles
+          bubbles={bubbles}
+          onPop={onPopBubble}
+          onExpire={onExpireBubble}
+          spotlightStep={spotlightStep}
+        />
+
+        {/* Radar Central Pill */}
+        <div className="relative z-10 px-4 py-2.5 rounded-2xl apple-glow-btn text-white shadow-xl flex items-center space-x-2.5 border border-white/40 cursor-default select-none">
+          <span className="text-base lg:text-lg">📡</span>
+          <div className="text-center">
+            <div className="text-[11px] lg:text-xs font-black leading-tight tracking-wide">
+              Radar Săn Deal Đáy
+            </div>
+            <div className="text-[9px] lg:text-[10px] text-white/90">Quét 24/7 Đa Sàn</div>
+          </div>
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-300 animate-pulse" />
+        </div>
+      </div>
+
+      {/* Mobile-only Action Buttons */}
+      {/* Test Siren Button (Bottom Left on Mobile) */}
       <button
         onClick={onTestAlarm}
         disabled={alarmLoading}
-        className="absolute bottom-2.5 left-4 z-30 w-8 h-8 rounded-full apple-glass border border-red-500/40 hover:border-red-500 shadow-md flex items-center justify-center text-xs cursor-pointer active:scale-90 transition-all hover:bg-red-500/20 group"
+        className="lg:hidden absolute bottom-2.5 left-4 z-30 w-8 h-8 rounded-full apple-glass border border-red-500/40 hover:border-red-500 shadow-md flex items-center justify-center text-xs cursor-pointer active:scale-90 transition-all hover:bg-red-500/20 group"
         title="Nhấn để test thông báo hú chuông sập giá"
       >
         <span
@@ -83,8 +109,8 @@ export function RadarHeader({
         <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-ping" />
       </button>
 
-      {/* Menu Button (Bottom Right) */}
-      <div className="absolute bottom-2.5 right-4 z-50">
+      {/* Mobile-only Menu Button (Bottom Right) */}
+      <div className="lg:hidden absolute bottom-2.5 right-4 z-50">
         <MenuPopup
           isOpen={isMenuOpen}
           onClose={onToggleMenu}
@@ -113,6 +139,65 @@ export function RadarHeader({
             {isMenuOpen ? "✕" : "☰"}
           </div>
         </button>
+      </div>
+
+      {/* Desktop Card Footer Controls */}
+      <div className="hidden lg:flex w-full flex-col gap-2.5 pt-3.5 border-t border-white/10 shrink-0">
+        {/* Test Siren Button */}
+        <button
+          onClick={onTestAlarm}
+          disabled={alarmLoading}
+          className="w-full py-2.5 px-3.5 rounded-2xl bg-gradient-to-r from-red-500/15 via-rose-500/20 to-amber-500/15 hover:from-red-500/25 hover:via-rose-500/30 hover:to-amber-500/25 border border-red-500/30 hover:border-red-500/60 text-white flex items-center justify-between text-xs font-bold transition-all shadow-md active:scale-[0.98] cursor-pointer group"
+          title="Nhấn để test chuông còi báo động sập giá"
+        >
+          <div className="flex items-center space-x-2">
+            <span
+              className={
+                alarmLoading
+                  ? "animate-spin text-sm"
+                  : "group-hover:scale-125 transition-transform text-sm"
+              }
+            >
+              🚨
+            </span>
+            <span className="text-slate-200 group-hover:text-white transition-colors">
+              Thử chuông còi báo sập giá
+            </span>
+          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 font-semibold">
+            {alarmLoading ? "Đang thử..." : "Bấm thử"}
+          </span>
+        </button>
+
+        {/* VIP / Feedback Action */}
+        <button
+          onClick={() => {
+            if (canLeaveFeedback || slot3Unlocked) {
+              onOpenFeedback()
+            } else {
+              onBlockedFeedbackClick()
+            }
+          }}
+          className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white flex items-center justify-between text-[11px] font-semibold transition-all cursor-pointer"
+        >
+          <div className="flex items-center space-x-1.5">
+            <span>{slot3Unlocked ? "👑" : "💬"}</span>
+            <span className="truncate">
+              {slot3Unlocked ? "VIP Đã Mở Khóa Ô #3" : "Góp ý để mở Ô #3 VIP"}
+            </span>
+          </div>
+          <span className="text-[10px] text-amber-400 font-bold">
+            {slot3Unlocked ? "Xem góp ý →" : "Mở ngay →"}
+          </span>
+        </button>
+
+        {/* Live Status & Platforms */}
+        <div className="flex items-center justify-between text-[10px] text-slate-400 px-1 pt-0.5">
+          <span className="flex items-center space-x-1">
+            <span>⚡ Chu kỳ: 5s/lần</span>
+          </span>
+          <span className="text-pink-400/90 font-medium">Shopee • TikTok • Lazada</span>
+        </div>
       </div>
     </div>
   )

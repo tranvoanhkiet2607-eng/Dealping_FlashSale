@@ -15,9 +15,14 @@ export function WishlistView({
   isMenuOpen,
 }: WishlistViewProps) {
   return (
-    <div className="flex-1 flex flex-col relative overflow-hidden z-10 pt-24 px-5">
+    <div className="flex-1 flex flex-col relative overflow-hidden z-10 pt-24 lg:pt-6 px-5 lg:px-8 max-w-6xl mx-auto w-full">
       <div className="flex items-start justify-between mb-1">
-        <h2 className="text-lg font-black">🕒 Lịch sử theo dõi</h2>
+        <div>
+          <h2 className="text-lg lg:text-xl font-black">🕒 Lịch sử theo dõi</h2>
+          <p className="text-[10px] lg:text-xs text-white/60 mb-2">
+            Các sản phẩm bạn đã dán link thiết lập cảnh báo
+          </p>
+        </div>
         <button
           onClick={onToggleMenu}
           className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 border z-50 ${
@@ -35,11 +40,8 @@ export function WishlistView({
           </div>
         </button>
       </div>
-      <p className="text-[10px] text-white/60 mb-4">
-        Các sản phẩm bạn đã dán link thiết lập cảnh báo
-      </p>
 
-      <div className="flex-1 overflow-y-auto space-y-3 pb-24 relative">
+      <div className="flex-1 overflow-y-auto space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 pb-24 relative">
         {loading ? (
           <>
             {[1, 2, 3].map((item) => (

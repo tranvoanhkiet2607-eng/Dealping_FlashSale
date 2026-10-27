@@ -35,6 +35,13 @@
   60% { transform: translateY(6px) scale(1.02); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
+@keyframes radar-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-radar-sweep {
+  animation: radar-sweep 5s linear infinite;
+}
 
 .bubble-item {
   position: absolute;

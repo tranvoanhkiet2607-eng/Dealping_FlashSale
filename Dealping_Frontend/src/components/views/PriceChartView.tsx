@@ -22,12 +22,24 @@ export function PriceChartView({
   isMenuOpen,
 }: PriceChartViewProps) {
   return (
-    <div className="flex-1 flex flex-col relative overflow-hidden z-10 pt-24 px-5">
-      <div className="flex items-start justify-between mb-1">
-        <h2 className="text-lg font-black">📈 Theo Dõi Biểu Đồ Giá</h2>
+    <div className="flex-1 flex flex-col relative overflow-hidden z-10 pt-24 lg:pt-6 px-5 lg:px-8 max-w-6xl mx-auto w-full">
+      <div className="flex items-start justify-between mb-4 pb-2 border-b border-white/10 shrink-0">
+        <div>
+          <div className="flex items-center space-x-2.5">
+            <h2 className="text-lg lg:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
+              📈 Biểu Đồ Giá Thực Tế
+            </h2>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-400/30">
+              🛡️ Dữ liệu thực 100%
+            </span>
+          </div>
+          <p className="text-[10px] lg:text-xs text-white/70 mt-1">
+            Biến động giá thực tế từ Radar & lịch sử sàn thương mại điện tử, không tạo giá ảo.
+          </p>
+        </div>
         <button
           onClick={onToggleMenu}
-          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 border z-50 ${
+          className={`lg:hidden w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 border z-50 ${
             isMenuOpen
               ? "bg-white text-black border-transparent scale-90"
               : "apple-glass text-white border-white/40 hover:scale-105 active:scale-95"
@@ -42,57 +54,80 @@ export function PriceChartView({
           </div>
         </button>
       </div>
-      <p className="text-[10px] text-white/60 mb-4">
-        Biểu đồ giá 12 giờ của các món đồ bạn đang theo dõi
-      </p>
 
-      <div className="flex-1 overflow-y-auto space-y-4 pb-20">
+      <div className="flex-1 overflow-y-auto space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-5 pb-20">
         {analyzedCharts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center opacity-50">
+          <div className="flex flex-col items-center justify-center h-full text-center opacity-50 py-16">
             <div className="text-4xl mb-3">🔍</div>
-            <p className="text-xs">Chưa có biểu đồ nào.</p>
-            <p className="text-[10px]">
-              Hãy thêm món đồ vào Radar để hệ thống theo dõi biểu đồ tự động nhé!
+            <p className="text-xs font-bold">Chưa có sản phẩm nào trên Radar.</p>
+            <p className="text-[10px] mt-1 text-slate-300">
+              Hãy dán link vào ô Săn Deal ở tab Radar để hệ thống theo dõi biểu đồ giá thực tế nhé!
             </p>
           </div>
         ) : (
-          analyzedCharts.map((chart) => (
-            <div
-              key={chart.id}
-              className="w-full bg-white/5 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)] rounded-2xl p-4 animate-slide-up-notification"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3 min-w-0 pr-2">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-white/10 flex items-center justify-center border border-white/20">
-                    {chart.imageUrl ? (
-                      <img
-                        src={chart.imageUrl}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          ;(e.currentTarget as HTMLElement).style.display =
-                            "none"
-                        }}
-                      />
-                    ) : (
-                      <span className="text-xl">🛍️</span>
-                    )}
+          analyzedCharts.map((chart) => {
+            const prices = chart.data.map((d) => d.price).filter((p) => p > 0)
+            const currentPrice = prices.length > 0 ? prices[prices.length - 1] : 0
+            const minPrice = prices.length > 0 ? Math.min(...prices) : 0
+            const maxPrice = prices.length > 0 ? Math.max(...prices) : 0
+
+            return (
+              <div
+                key={chart.id}
+                className="w-full apple-glass border border-emerald-500/25 shadow-xl rounded-2xl p-4 animate-slide-up-notification flex flex-col"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3 min-w-0 pr-2">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-white/10 flex items-center justify-center border border-white/20">
+                      {chart.imageUrl ? (
+                        <img
+                          src={chart.imageUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            ;(e.currentTarget as HTMLElement).style.display =
+                              "none"
+                          }}
+                        />
+                      ) : (
+                        <span className="text-xl">🛍️</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-xs lg:text-sm font-bold truncate text-emerald-100">
+                        {chart.name}
+                      </h3>
+                      <p className="text-[8px] lg:text-[9px] text-emerald-400/80 truncate mt-0.5">
+                        {chart.url}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-bold truncate text-emerald-50">
-                      {chart.name}
-                    </h3>
-                    <p className="text-[8px] text-emerald-400/70 truncate mt-0.5">
-                      {chart.url}
-                    </p>
+                  {chart.isBottom && (
+                    <span className="px-2 py-1 bg-emerald-500/30 text-emerald-300 text-[10px] rounded-lg font-black shrink-0 animate-pulse border border-emerald-400/50 shadow-[0_0_10px_rgba(16,185,129,0.4)]">
+                      🔥 Chạm đáy
+                    </span>
+                  )}
+                </div>
+
+                {/* Price Metrics Bar */}
+                <div className="grid grid-cols-2 gap-2 mb-3 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs">
+                  <div>
+                    <span className="text-[9px] text-slate-400 block">Giá hiện tại:</span>
+                    <span className="font-black text-emerald-400">
+                      {currentPrice > 0
+                        ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(currentPrice)
+                        : "Đang cập nhật"}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[9px] text-slate-400 block">Đáy phát hiện:</span>
+                    <span className="font-bold text-amber-300">
+                      {minPrice > 0
+                        ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(minPrice)
+                        : "Đang cập nhật"}
+                    </span>
                   </div>
                 </div>
-                {chart.isBottom && (
-                  <span className="px-2 py-1 bg-emerald-500/30 text-emerald-300 text-[10px] rounded-lg font-black shrink-0 animate-pulse border border-emerald-400/50 shadow-[0_0_10px_rgba(16,185,129,0.4)]">
-                    🔥 Đáy 12 giờ
-                  </span>
-                )}
-              </div>
               <div className="h-48 w-full mt-3 bg-white/5 backdrop-blur-sm md:backdrop-blur- rounded-xl p-2 border border-emerald-500/20 shadow-inner relative">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
@@ -184,8 +219,9 @@ export function PriceChartView({
                 </ResponsiveContainer>
               </div>
             </div>
-          ))
-        )}
+          )
+        })
+      )}
       </div>
     </div>
   )

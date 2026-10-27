@@ -1,6 +1,20 @@
 import React from "react"
 
-export type View = "onboarding" | "welcome" | "main" | "wishlist" | "price_chart" | "account"
+export type View = "onboarding" | "welcome" | "main" | "wishlist" | "price_chart" | "account" | "feedback"
+
+export interface ReviewItem {
+  id: string
+  productId?: string
+  productName: string
+  productImage?: string | null
+  productPrice?: string | number
+  productUrl?: string
+  rating: number
+  content: string
+  contact?: string
+  createdAt: string
+  updatedAt?: string
+}
 
 export type SpotlightStep = "none" | "slot1" | "radar"
 

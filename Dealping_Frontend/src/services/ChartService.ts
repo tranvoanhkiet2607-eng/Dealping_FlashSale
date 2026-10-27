@@ -1,44 +1,78 @@
 import { ChartPoint } from "../types"
 
+export interface RealPriceTrackInput {
+  currentPrice: number
+  originalPrice?: number
+  voucherPrice?: number | null
+  targetPrice?: number
+  checkpoints?: { label: string; price: number }[]
+}
+
 /**
  * ChartService (OOP)
- * Handles historical price series simulation, data interpolation, and chart curve generation.
+ * Handles historical price series and authentic milestone price points.
+ * Eliminates fake simulated price jumps and random noise.
  */
 export class ChartService {
   /**
-   * Generates a realistic 12-hour simulation of price fluctuation down to basePrice
+   * Build authentic price points based on REAL tracked data.
+   */
+  public buildRealPricePoints(input: RealPriceTrackInput): ChartPoint[] {
+    const { currentPrice, originalPrice, voucherPrice, checkpoints } = input
+    const data: ChartPoint[] = []
+
+    if (!currentPrice || currentPrice <= 0) {
+      return [{ date: "Hiện tại", price: 0 }]
+    }
+
+    // 1. If explicit real checkpoints are provided (from database or local monitoring)
+    if (checkpoints && checkpoints.length > 0) {
+      return checkpoints.map((c) => ({
+        date: c.label,
+        price: Math.round(c.price),
+      }))
+    }
+
+    // 2. Real price evolution timeline based on true product milestones:
+    // If the product has an original listed price higher than current price
+    if (originalPrice && originalPrice > currentPrice) {
+      data.push({
+        date: "Giá niêm yết",
+        price: Math.round(originalPrice),
+      })
+    }
+
+    // Current price detected by Radar
+    data.push({
+      date: "Bắt đầu theo dõi",
+      price: Math.round(currentPrice),
+    })
+
+    // If a platform voucher or flash sale discount was discovered
+    if (voucherPrice && voucherPrice > 0 && voucherPrice < currentPrice) {
+      data.push({
+        date: "Sau mã Voucher",
+        price: Math.round(voucherPrice),
+      })
+      data.push({
+        date: "Giá đáy hiện tại",
+        price: Math.round(voucherPrice),
+      })
+    } else {
+      data.push({
+        date: "Radar quét gần nhất",
+        price: Math.round(currentPrice),
+      })
+    }
+
+    return data
+  }
+
+  /**
+   * Fallback using real baseline without fake fluctuating noise
    */
   public generateMockDayData(basePrice: number): ChartPoint[] {
-    const data: ChartPoint[] = []
-    const points = 12 * 2 // 12 hours, each hour 2 points = 24 points
-    const now = new Date()
-
-    for (let i = points; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 30 * 60000)
-      const hours = time.getHours().toString().padStart(2, "0")
-      const mins = time.getMinutes().toString().padStart(2, "0")
-      const day = time.getDate().toString().padStart(2, "0")
-      const month = (time.getMonth() + 1).toString().padStart(2, "0")
-      const label = `${hours}:${mins} ${day}/${month}`
-
-      // Simulated trend downwards towards basePrice
-      const progress = (points - i) / points // 0 -> 1
-      const trend =
-        basePrice + basePrice * 0.25 * (1 - Math.pow(progress, 2))
-
-      // Random noise +/- 2%
-      const noise = (Math.random() - 0.5) * (basePrice * 0.04)
-
-      let simulatedPrice = Math.round((trend + noise) / 1000) * 1000
-
-      if (i === 0) {
-        simulatedPrice = Math.round(basePrice / 1000) * 1000
-        data.push({ date: "Vừa quét", price: simulatedPrice })
-      } else {
-        data.push({ date: label, price: simulatedPrice })
-      }
-    }
-    return data
+    return this.buildRealPricePoints({ currentPrice: basePrice })
   }
 }
 
