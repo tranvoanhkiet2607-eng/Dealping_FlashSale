@@ -1,5 +1,6 @@
 import React from "react"
 import { Rank } from "../../types"
+import { MenuButton } from "../common"
 
 interface AccountViewProps {
   currentRank: Rank
@@ -27,22 +28,11 @@ export function AccountView({
             Quản lý thông tin & hạng thành viên
           </p>
         </div>
-        <button
+        <MenuButton
+          isOpen={isMenuOpen}
           onClick={onToggleMenu}
-          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 border z-50 ${
-            isMenuOpen
-              ? "bg-white text-black border-transparent scale-90"
-              : "apple-glass text-white border-white/40 hover:scale-105 active:scale-95"
-          }`}
-        >
-          <div
-            className={`transform transition-transform duration-300 text-xs ${
-              isMenuOpen ? "rotate-45" : "rotate-0"
-            }`}
-          >
-            {isMenuOpen ? "✕" : "☰"}
-          </div>
-        </button>
+          className="z-50 shrink-0"
+        />
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center">

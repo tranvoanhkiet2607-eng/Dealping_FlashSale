@@ -37,7 +37,11 @@ export function PushNotificationBanner({
               }}
             />
           ) : (
-            <span>📡</span>
+            <img
+              src="/apple-touch-icon.png"
+              alt="DealPing Mascot"
+              className="w-full h-full object-cover rounded-2xl"
+            />
           )}
         </div>
         <div className="flex-1 min-w-0">

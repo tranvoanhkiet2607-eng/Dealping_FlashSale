@@ -298,6 +298,70 @@ body, html {
   color: #ffffff !important;
 }
 
+/* ================= MENU TOGGLE BUTTON (LIGHT / DARK THEME) ================= */
+.app-menu-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.light-mode .app-menu-btn:not(.is-open) {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #0f172a !important;
+  border: 1.5px solid rgba(203, 213, 225, 0.9) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+}
+.light-mode .app-menu-btn:not(.is-open) svg {
+  color: #0f172a !important;
+  stroke: #0f172a !important;
+}
+.light-mode .app-menu-btn:not(.is-open):hover {
+  background: #ffffff !important;
+  transform: scale(1.06);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12) !important;
+}
+
+.dark-mode .app-menu-btn:not(.is-open),
+.dark .app-menu-btn:not(.is-open) {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.55) !important;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4), 0 0 15px rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+.dark-mode .app-menu-btn:not(.is-open) svg,
+.dark .app-menu-btn:not(.is-open) svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+.dark-mode .app-menu-btn:not(.is-open):hover,
+.dark .app-menu-btn:not(.is-open):hover {
+  background: rgba(255, 255, 255, 0.32) !important;
+  border-color: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 6px 25px rgba(168, 85, 247, 0.55), 0 0 20px rgba(255, 255, 255, 0.4) !important;
+  transform: scale(1.06);
+}
+
+.app-menu-btn.is-open {
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #6366f1 100%) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 6px 24px rgba(236, 72, 153, 0.5), 0 0 15px rgba(168, 85, 247, 0.4) !important;
+  transform: scale(0.95);
+}
+.app-menu-btn.is-open svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
 /* ================= MENU POPUP (LIGHT / DARK THEME) ================= */
 /* Light Mode Menu Popup */
 .menu-popup {
@@ -383,9 +447,9 @@ body, html {
 /* Dark Mode Menu Popup */
 .dark-mode .menu-popup,
 .dark .menu-popup {
-  background: rgba(22, 26, 41, 0.96) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.75), 0 0 25px rgba(124, 58, 237, 0.18) !important;
+  background: rgba(18, 22, 36, 0.96) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.24) !important;
+  box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.85), 0 0 30px rgba(168, 85, 247, 0.28) !important;
   color: #ffffff !important;
 }
 .dark-mode .menu-popup .menu-item,

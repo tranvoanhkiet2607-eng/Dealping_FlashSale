@@ -1,5 +1,6 @@
 import React from "react"
 import { pricingService } from "../../services"
+import { MenuButton } from "../common"
 
 interface WishlistViewProps {
   wishlistItems: any[]
@@ -23,22 +24,11 @@ export function WishlistView({
             Các sản phẩm bạn đã dán link thiết lập cảnh báo
           </p>
         </div>
-        <button
+        <MenuButton
+          isOpen={isMenuOpen}
           onClick={onToggleMenu}
-          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 border z-50 ${
-            isMenuOpen
-              ? "bg-white text-black border-transparent scale-90"
-              : "apple-glass text-white border-white/40 hover:scale-105 active:scale-95"
-          }`}
-        >
-          <div
-            className={`transform transition-transform duration-300 text-xs ${
-              isMenuOpen ? "rotate-90" : "rotate-0"
-            }`}
-          >
-            {isMenuOpen ? "✕" : "☰"}
-          </div>
-        </button>
+          className="z-50 shrink-0"
+        />
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 pb-24 relative">

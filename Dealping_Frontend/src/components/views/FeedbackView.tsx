@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { ReviewItem } from "../../types"
 import { TrackedProductOption } from "../../hooks/useFeedback"
+import { MenuButton } from "../common"
 
 interface FeedbackViewProps {
   trackedProducts: TrackedProductOption[]
@@ -95,22 +96,11 @@ export function FeedbackView({
         </div>
 
         {/* Mobile menu toggle */}
-        <button
+        <MenuButton
+          isOpen={isMenuOpen}
           onClick={onToggleMenu}
-          className={`lg:hidden w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 border z-50 ${
-            isMenuOpen
-              ? "bg-white text-black border-transparent scale-90"
-              : "apple-glass text-white border-white/40 hover:scale-105 active:scale-95"
-          }`}
-        >
-          <div
-            className={`transform transition-transform duration-300 text-xs ${
-              isMenuOpen ? "rotate-90" : "rotate-0"
-            }`}
-          >
-            {isMenuOpen ? "✕" : "☰"}
-          </div>
-        </button>
+          className="lg:hidden z-50 shrink-0"
+        />
       </div>
 
       {/* Main Content Area */}

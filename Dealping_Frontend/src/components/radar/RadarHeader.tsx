@@ -1,7 +1,7 @@
 import React from "react"
 import { BubbleData, SpotlightStep, View } from "../../types"
 import { RadarBubbles } from "./RadarBubbles"
-import { MenuPopup } from "../common/MenuPopup"
+import { MenuPopup, MenuButton } from "../common"
 
 interface RadarHeaderProps {
   bubbles: BubbleData[]
@@ -94,19 +94,19 @@ export function RadarHeader({
       <button
         onClick={onTestAlarm}
         disabled={alarmLoading}
-        className="lg:hidden absolute bottom-2.5 left-4 z-30 w-8 h-8 rounded-full apple-glass border border-red-500/40 hover:border-red-500 shadow-md flex items-center justify-center text-xs cursor-pointer active:scale-90 transition-all hover:bg-red-500/20 group"
+        className="lg:hidden absolute bottom-2.5 left-4 z-30 w-9 h-9 rounded-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/40 hover:border-red-500 shadow-lg shadow-red-500/20 backdrop-blur-xl flex items-center justify-center text-sm cursor-pointer active:scale-90 transition-all group"
         title="Nhấn để test thông báo hú chuông sập giá"
       >
         <span
           className={
             alarmLoading
-              ? "animate-spin text-[10px]"
-              : "group-hover:scale-115 transition-transform"
+              ? "animate-spin text-xs"
+              : "group-hover:scale-120 transition-transform"
           }
         >
           🚨
         </span>
-        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-ping" />
+        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
       </button>
 
       {/* Mobile-only Menu Button (Bottom Right) */}
@@ -120,26 +120,14 @@ export function RadarHeader({
           slot3Unlocked={slot3Unlocked}
           onOpenFeedback={onOpenFeedback}
           onBlockedFeedbackClick={onBlockedFeedbackClick}
-          className="absolute top-10 right-0 shadow-2xl mt-1.5"
+          className="absolute top-11 right-0 shadow-2xl mt-1.5"
         />
 
-        <button
+        <MenuButton
+          isOpen={isMenuOpen}
           onClick={onToggleMenu}
-          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all duration-300 border ${
-            isMenuOpen
-              ? "bg-white text-black border-transparent scale-90"
-              : "apple-glass text-slate-800 dark:text-white border-slate-300 dark:border-white/40 hover:scale-105 active:scale-95"
-          }`}
           title="Menu Chức Năng"
-        >
-          <div
-            className={`transform transition-transform duration-300 text-xs ${
-              isMenuOpen ? "rotate-90" : "rotate-0"
-            }`}
-          >
-            {isMenuOpen ? "✕" : "☰"}
-          </div>
-        </button>
+        />
       </div>
 
       {/* Desktop Card Footer Controls */}
