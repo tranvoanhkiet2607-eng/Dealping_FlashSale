@@ -4,10 +4,16 @@
   "description": "Trợ lý săn deal flash sale đa sàn Shopee, TikTok, Lazada 24/7",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#08090e",
-  "theme_color": "#08090e",
+  "background_color": "#f8fafc",
+  "theme_color": "#7c3aed",
   "orientation": "portrait-primary",
   "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
     {
       "src": "/favicon-32x32.png",
       "sizes": "32x32",

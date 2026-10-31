@@ -42,6 +42,8 @@ interface AppModalsProps {
   phoneScreenRef: React.RefObject<HTMLDivElement | null>
   onSpotlightNext: () => void
   onSpotlightDone: () => void
+  isDark?: boolean
+  onToggleTheme?: () => void
 }
 
 export function AppModals({
@@ -76,6 +78,8 @@ export function AppModals({
   phoneScreenRef,
   onSpotlightNext,
   onSpotlightDone,
+  isDark,
+  onToggleTheme,
 }: AppModalsProps) {
   return (
     <>
@@ -128,6 +132,8 @@ export function AppModals({
         containerRef={phoneScreenRef}
         onNext={onSpotlightNext}
         onDone={onSpotlightDone}
+        isDark={isDark}
+        onToggleTheme={onToggleTheme}
       />
     </>
   )

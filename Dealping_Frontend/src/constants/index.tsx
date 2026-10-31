@@ -14,6 +14,7 @@ import {
   Monitor,
 } from "lucide-react"
 import { Rank } from "../types"
+export { DEALPING_LOGO_URI, DEALPING_FAVICON_URI } from "./logo"
 
 export const BUBBLE_ICONS = [
   <Tag className="w-1/2 h-1/2 text-pink-400" />,

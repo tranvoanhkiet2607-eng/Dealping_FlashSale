@@ -1,4 +1,4 @@
-import { API_URL, VAPID_PUBLIC_KEY } from "../constants"
+import { API_URL } from "../constants"
 import { urlParserService } from "./UrlParserService"
 
 /**
@@ -35,7 +35,8 @@ export class TrackingApiService {
     targetPrice: number,
     variantName: string,
     productName?: string,
-    imageUrl?: string
+    imageUrl?: string,
+    originalPrice?: number
   ): Promise<any> {
     const payload = {
       userId: this.getUserId(),
@@ -44,6 +45,40 @@ export class TrackingApiService {
       variantName,
       productName,
       imageUrl,
+      originalPrice,
+    }
+
+    // Save to localStorage backup as well so Wishlist & Price Chart always have instant data
+    const saveLocalBackup = (id: string, resolvedName: string) => {
+      try {
+        const localItems = JSON.parse(
+          localStorage.getItem("dealping_tracked_items") || "[]"
+        )
+        const filtered = Array.isArray(localItems)
+          ? localItems.filter(
+              (it: any) =>
+                (it.shopeeUrl || it.productUrl || it.url) !== shopeeUrl
+            )
+          : []
+        filtered.unshift({
+          id,
+          shopeeUrl,
+          productUrl: shopeeUrl,
+          targetPrice,
+          originalPrice: originalPrice || Math.round(targetPrice / 0.72),
+          variantName,
+          imageUrl: imageUrl || null,
+          productName: resolvedName,
+          status: "monitoring",
+          statusLabel: "Đang rình giá",
+          lastCheckedAgo: "Vừa xong",
+          createdAt: new Date().toISOString(),
+        })
+        localStorage.setItem(
+          "dealping_tracked_items",
+          JSON.stringify(filtered.slice(0, 10))
+        )
+      } catch (e) {}
     }
 
     try {
@@ -54,7 +89,14 @@ export class TrackingApiService {
       })
 
       if (response.ok) {
-        return await response.json()
+        const json = await response.json()
+        saveLocalBackup(
+          json?.data?.id || "item-" + Date.now(),
+          json?.data?.productName ||
+            productName ||
+            urlParserService.extractCleanProductName(shopeeUrl)
+        )
+        return json
       }
     } catch (err) {
       console.warn("Primary API URL failed to save, trying fallback / local:", err)
@@ -69,37 +111,33 @@ export class TrackingApiService {
           body: JSON.stringify(payload),
         })
         if (localRes.ok) {
-          return await localRes.json()
+          const json = await localRes.json()
+          saveLocalBackup(
+            json?.data?.id || "item-" + Date.now(),
+            json?.data?.productName ||
+              productName ||
+              urlParserService.extractCleanProductName(shopeeUrl)
+          )
+          return json
         }
       } catch (e) {}
     }
 
     // Fallback 2: LocalStorage guarantee
     const fallbackId = "item-" + Date.now()
-    try {
-      const localItems = JSON.parse(
-        localStorage.getItem("dealping_tracked_items") || "[]"
-      )
-      localItems.push({
-        id: fallbackId,
-        shopeeUrl,
-        targetPrice,
-        variantName,
-        productName:
-          productName || urlParserService.extractCleanProductName(shopeeUrl),
-        createdAt: new Date().toISOString(),
-      })
-      localStorage.setItem("dealping_tracked_items", JSON.stringify(localItems))
-    } catch (e) {}
+    const resolvedFallbackName =
+      productName || urlParserService.extractCleanProductName(shopeeUrl)
+    saveLocalBackup(fallbackId, resolvedFallbackName)
 
     return {
       status: "success",
       data: {
         id: fallbackId,
-        productName:
-          productName || urlParserService.extractCleanProductName(shopeeUrl),
+        productName: resolvedFallbackName,
         targetPrice,
+        originalPrice,
         variantName,
+        imageUrl,
       },
     }
   }
@@ -108,6 +146,16 @@ export class TrackingApiService {
    * Deletes a tracking item by id
    */
   public async deleteFromBackend(id: string): Promise<void> {
+    try {
+      const localItems = JSON.parse(
+        localStorage.getItem("dealping_tracked_items") || "[]"
+      )
+      if (Array.isArray(localItems)) {
+        const updated = localItems.filter((it: any) => it.id !== id)
+        localStorage.setItem("dealping_tracked_items", JSON.stringify(updated))
+      }
+    } catch {}
+
     try {
       await fetch(`${this.baseUrl}/api/tracking-items/${id}`, {
         method: "DELETE",
@@ -158,7 +206,7 @@ export class TrackingApiService {
   }
 
   /**
-   * Fetches all tracking items for the current user
+   * Fetches all tracking items for the current user (with localStorage fallback)
    */
   public async fetchTrackingItems(): Promise<any[]> {
     try {
@@ -167,15 +215,31 @@ export class TrackingApiService {
       )
       if (res.ok) {
         const data = await res.json()
+        let apiList: any[] = []
         if (data && (data.status === "success" || data.success === true)) {
-          return data.data || []
+          apiList = data.data || []
+        } else if (Array.isArray(data)) {
+          apiList = data
+        } else if (data && data.data && Array.isArray(data.data)) {
+          apiList = data.data
         }
-        if (Array.isArray(data)) return data
-        if (data && data.data && Array.isArray(data.data)) return data.data
+        if (apiList.length > 0) {
+          return apiList
+        }
       }
     } catch (err) {
-      console.error("Lỗi tải tracking items:", err)
+      console.warn("Lỗi tải tracking items từ server, dùng local fallback:", err)
     }
+
+    try {
+      const localItems = JSON.parse(
+        localStorage.getItem("dealping_tracked_items") || "[]"
+      )
+      if (Array.isArray(localItems) && localItems.length > 0) {
+        return localItems
+      }
+    } catch {}
+
     return []
   }
 

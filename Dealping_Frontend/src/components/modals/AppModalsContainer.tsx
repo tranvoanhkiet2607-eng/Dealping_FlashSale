@@ -48,6 +48,8 @@ interface AppModalsContainerProps {
   finishTutorial: () => void
   slot1InputRef: React.RefObject<HTMLInputElement | null>
   phoneScreenRef: React.RefObject<HTMLDivElement | null>
+  isDark?: boolean
+  onToggleTheme?: () => void
 
   // Toast
   showToast: (title: string, msg: string, icon?: string) => void
@@ -84,6 +86,8 @@ export function AppModalsContainer({
   finishTutorial,
   slot1InputRef,
   phoneScreenRef,
+  isDark,
+  onToggleTheme,
   showToast,
 }: AppModalsContainerProps) {
   const getSlot = (slotNum: number | null) => {
@@ -179,6 +183,16 @@ export function AppModalsContainer({
     setShowAlarmModal(false)
   }
 
+  const handleSpotlightNext = () => {
+    if (spotlightStep === "slot1") {
+      setSpotlightStep("radar")
+    } else if (spotlightStep === "radar") {
+      setSpotlightStep("theme")
+    } else {
+      finishTutorial()
+    }
+  }
+
   return (
     <AppModals
       detailModalSlot={detailModalSlot}
@@ -210,8 +224,10 @@ export function AppModalsContainer({
       spotlightStep={spotlightStep}
       slot1InputRef={slot1InputRef}
       phoneScreenRef={phoneScreenRef}
-      onSpotlightNext={() => setSpotlightStep("radar")}
+      onSpotlightNext={handleSpotlightNext}
       onSpotlightDone={finishTutorial}
+      isDark={isDark}
+      onToggleTheme={onToggleTheme}
     />
   )
 }

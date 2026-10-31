@@ -16,7 +16,7 @@ export interface ReviewItem {
   updatedAt?: string
 }
 
-export type SpotlightStep = "none" | "slot1" | "radar"
+export type SpotlightStep = "none" | "slot1" | "radar" | "theme"
 
 export interface PriceDropData {
   productName: string
@@ -116,6 +116,10 @@ export interface ChartItem {
   url: string
   imageUrl?: string | null
   isBottom?: boolean
+  currentPrice?: number
+  originalPrice?: number
+  targetPrice?: number
+  voucherPrice?: number | null
   data: ChartPoint[]
 }
 

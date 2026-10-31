@@ -63,9 +63,9 @@ body, html {
   align-items: center;
   justify-content: center;
   font-size: 13px;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1.5px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 12px rgba(236,72,153,0.25), inset 0 1px 3px rgba(255,255,255,0.8);
+  background: rgba(255, 255, 255, 0.65);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(236,72,153,0.28), inset 0 1px 3px rgba(255,255,255,0.85);
   animation-fill-mode: forwards;
 }
 .bubble-item:hover { transform: scale(1.15); }
@@ -122,34 +122,30 @@ body, html {
   box-shadow: 0 8px 25px -4px rgba(124, 58, 237, 0.4);
 }
 
-/* Light mode */
+/* ================= LIGHT MODE (DEFAULT - SÁNG SỦA, RÕ NÉT) ================= */
 .light-mode {
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2f6 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #fdf4ff 100%);
   color: #0f172a;
 }
 .light-mode .apple-glass {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  box-shadow: 0 6px 24px -4px rgba(15, 23, 42, 0.06);
   color: #0f172a;
 }
 .light-mode .apple-sheet {
-  background: #ffffff;
-  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.97);
+  border-top: 1px solid rgba(203, 213, 225, 0.85);
   color: #0f172a;
 }
 .light-mode .apple-input {
-  background: #f8fafc;
+  background: #ffffff;
   border: 1.5px solid #cbd5e1;
   color: #0f172a;
 }
 
-/* Đảm bảo chữ hướng dẫn, phụ đề và nội dung trong light mode luôn là màu đen/xám đậm rõ nét */
-.light-mode {
-  color: #0f172a;
-}
 .light-mode h1:not([class*="bg-clip-text"]):not([class*="text-transparent"]),
 .light-mode h2:not([class*="bg-clip-text"]):not([class*="text-transparent"]),
 .light-mode h3:not([class*="bg-clip-text"]):not([class*="text-transparent"]),
@@ -208,7 +204,6 @@ body, html {
   color: #ffffff !important;
 }
 
-/* Chuyển các chữ text-white trong card sang màu tối khi ở light mode nếu không nằm trong nút màu */
 .light-mode :not(.apple-glow-btn):not([class*="bg-gradient"]):not([class*="bg-pink-"]):not([class*="bg-purple-"]):not([class*="bg-emerald-"]):not([class*="bg-red-"]):not([class*="bg-blue-"]) > .text-white,
 .light-mode :not(.apple-glow-btn):not([class*="bg-gradient"]):not([class*="bg-pink-"]):not([class*="bg-purple-"]):not([class*="bg-emerald-"]):not([class*="bg-red-"]):not([class*="bg-blue-"]) > .text-white\/90,
 .light-mode :not(.apple-glow-btn):not([class*="bg-gradient"]):not([class*="bg-pink-"]):not([class*="bg-purple-"]):not([class*="bg-emerald-"]):not([class*="bg-red-"]):not([class*="bg-blue-"]) > .text-white\/80 {
@@ -220,9 +215,9 @@ body, html {
   color: #475569;
 }
 
-/* Dark mode */
+/* ================= DARK MODE (SÁNG RÕ, HIỆN ĐẠI, DỊU MẮT - KHÔNG BỊ TỐI ĐEN) ================= */
 .dark-mode {
-  background: #08090E;
+  background: linear-gradient(135deg, #13172b 0%, #1d2242 50%, #171b34 100%);
   color: #f8fafc;
 }
 .dark-mode .text-slate-900,
@@ -230,7 +225,6 @@ body, html {
   color: #f8fafc;
 }
 
-/* Đảm bảo nếu có container nền trắng trong Dark mode, chữ màu tối không bị ép thành màu trắng */
 .dark-mode .bg-white .text-slate-900,
 .dark-mode .bg-white .text-slate-800,
 .dark-mode .bg-white\/95 .text-slate-900,
@@ -246,9 +240,9 @@ body, html {
 /* Light Mode */
 .spotlight-card {
   background: #ffffff !important;
-  border: 1.5px solid rgba(226, 232, 240, 0.9) !important;
+  border: 2px solid rgba(168, 85, 247, 0.35) !important;
   color: #0f172a !important;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.28) !important;
 }
 .spotlight-card p,
 .spotlight-card b,
@@ -265,10 +259,10 @@ body, html {
 /* Dark Mode */
 .dark-mode .spotlight-card,
 .dark .spotlight-card {
-  background: #161a29 !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+  background: #1e2440 !important;
+  border: 2px solid rgba(168, 85, 247, 0.5) !important;
   color: #ffffff !important;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 25px rgba(139, 92, 246, 0.3) !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.65), 0 0 25px rgba(139, 92, 246, 0.35) !important;
 }
 .dark-mode .spotlight-card p,
 .dark-mode .spotlight-card b,
@@ -280,17 +274,17 @@ body, html {
 }
 .dark-mode .spotlight-arrow,
 .dark .spotlight-arrow {
-  border-bottom-color: #161a29 !important;
+  border-bottom-color: #1e2440 !important;
 }
 
 /* Onboarding Dialog */
 .onboarding-dialog {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.96);
   color: #0f172a;
 }
 .dark-mode .onboarding-dialog,
 .dark .onboarding-dialog {
-  background: rgba(22, 26, 41, 0.95) !important;
+  background: rgba(30, 36, 64, 0.96) !important;
   color: #ffffff !important;
 }
 .dark-mode .onboarding-dialog b,
@@ -313,9 +307,9 @@ body, html {
 }
 
 .light-mode .app-menu-btn:not(.is-open) {
-  background: rgba(255, 255, 255, 0.95) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
   color: #0f172a !important;
-  border: 1.5px solid rgba(203, 213, 225, 0.9) !important;
+  border: 1.5px solid rgba(203, 213, 225, 0.95) !important;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
 }
 .light-mode .app-menu-btn:not(.is-open) svg {
@@ -330,9 +324,9 @@ body, html {
 
 .dark-mode .app-menu-btn:not(.is-open),
 .dark .app-menu-btn:not(.is-open) {
-  background: rgba(255, 255, 255, 0.22) !important;
+  background: rgba(255, 255, 255, 0.24) !important;
   color: #ffffff !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.55) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.6) !important;
   box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4), 0 0 15px rgba(255, 255, 255, 0.25) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
@@ -344,7 +338,7 @@ body, html {
 }
 .dark-mode .app-menu-btn:not(.is-open):hover,
 .dark .app-menu-btn:not(.is-open):hover {
-  background: rgba(255, 255, 255, 0.32) !important;
+  background: rgba(255, 255, 255, 0.34) !important;
   border-color: rgba(255, 255, 255, 0.85) !important;
   box-shadow: 0 6px 25px rgba(168, 85, 247, 0.55), 0 0 20px rgba(255, 255, 255, 0.4) !important;
   transform: scale(1.06);
@@ -447,26 +441,26 @@ body, html {
 /* Dark Mode Menu Popup */
 .dark-mode .menu-popup,
 .dark .menu-popup {
-  background: rgba(18, 22, 36, 0.96) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.24) !important;
-  box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.85), 0 0 30px rgba(168, 85, 247, 0.28) !important;
+  background: rgba(26, 32, 58, 0.97) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.26) !important;
+  box-shadow: 0 20px 45px -5px rgba(0, 0, 0, 0.75), 0 0 30px rgba(168, 85, 247, 0.3) !important;
   color: #ffffff !important;
 }
 .dark-mode .menu-popup .menu-item,
 .dark .menu-popup .menu-item {
-  color: rgba(255, 255, 255, 0.85) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 .dark-mode .menu-popup .menu-item svg,
 .dark .menu-popup .menu-item svg {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 .dark-mode .menu-popup .menu-item span,
 .dark .menu-popup .menu-item span {
-  color: rgba(255, 255, 255, 0.85) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 .dark-mode .menu-popup .menu-item:hover,
 .dark .menu-popup .menu-item:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
 }
 .dark-mode .menu-popup .menu-item:hover span,
 .dark-mode .menu-popup .menu-item:hover svg,
@@ -478,55 +472,55 @@ body, html {
 /* Active states in Dark Mode */
 .dark-mode .menu-popup .menu-item.active-wishlist,
 .dark .menu-popup .menu-item.active-wishlist {
-  background: rgba(168, 85, 247, 0.22) !important;
-  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  background: rgba(168, 85, 247, 0.25) !important;
+  border: 1px solid rgba(168, 85, 247, 0.4) !important;
 }
 .dark-mode .menu-popup .menu-item.active-wishlist span,
 .dark-mode .menu-popup .menu-item.active-wishlist svg,
 .dark .menu-popup .menu-item.active-wishlist span,
 .dark .menu-popup .menu-item.active-wishlist svg {
-  color: #c084fc !important;
+  color: #d8b4fe !important;
 }
 
 .dark-mode .menu-popup .menu-item.active-price-chart,
 .dark .menu-popup .menu-item.active-price-chart {
-  background: rgba(16, 185, 129, 0.22) !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  background: rgba(16, 185, 129, 0.25) !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
 }
 .dark-mode .menu-popup .menu-item.active-price-chart span,
 .dark-mode .menu-popup .menu-item.active-price-chart svg,
 .dark .menu-popup .menu-item.active-price-chart span,
 .dark .menu-popup .menu-item.active-price-chart svg {
-  color: #34d399 !important;
+  color: #6ee7b7 !important;
 }
 
 .dark-mode .menu-popup .menu-item.active-account,
 .dark .menu-popup .menu-item.active-account {
-  background: rgba(236, 72, 153, 0.22) !important;
-  border: 1px solid rgba(236, 72, 153, 0.35) !important;
+  background: rgba(236, 72, 153, 0.25) !important;
+  border: 1px solid rgba(236, 72, 153, 0.4) !important;
 }
 .dark-mode .menu-popup .menu-item.active-account span,
 .dark-mode .menu-popup .menu-item.active-account svg,
 .dark .menu-popup .menu-item.active-account span,
 .dark .menu-popup .menu-item.active-account svg {
-  color: #f472b6 !important;
+  color: #f9a8d4 !important;
 }
 
 .dark-mode .menu-popup .menu-item.active-main,
 .dark .menu-popup .menu-item.active-main {
-  background: rgba(14, 165, 233, 0.22) !important;
-  border: 1px solid rgba(14, 165, 233, 0.35) !important;
+  background: rgba(14, 165, 233, 0.25) !important;
+  border: 1px solid rgba(14, 165, 233, 0.4) !important;
 }
 .dark-mode .menu-popup .menu-item.active-main span,
 .dark-mode .menu-popup .menu-item.active-main svg,
 .dark .menu-popup .menu-item.active-main span,
 .dark .menu-popup .menu-item.active-main svg {
-  color: #38bdf8 !important;
+  color: #7dd3fc !important;
 }
 
 .dark-mode .menu-popup .menu-divider,
 .dark .menu-popup .menu-divider {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
 }
 .dark-mode .menu-popup .menu-feedback,
 .dark .menu-popup .menu-feedback {
@@ -538,17 +532,17 @@ body, html {
 }
 .dark-mode .menu-popup .menu-feedback-sub,
 .dark .menu-popup .menu-feedback-sub {
-  color: rgba(252, 211, 77, 0.75) !important;
+  color: rgba(252, 211, 77, 0.85) !important;
 }
 .dark-mode .menu-popup .menu-feedback:hover,
 .dark .menu-popup .menu-feedback:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 .dark-mode .menu-popup .menu-feedback-locked span,
 .dark-mode .menu-popup .menu-feedback-locked p,
 .dark .menu-popup .menu-feedback-locked span,
 .dark .menu-popup .menu-feedback-locked p {
-  color: rgba(255, 255, 255, 0.4) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
 }
 
 /* Đảm bảo các modal và container nền tối không bị biến chữ thành màu đen khi đang ở Light Mode */
@@ -586,30 +580,29 @@ body, html {
 }
 
 .dark-mode .apple-glass {
-  background: rgba(20, 24, 38, 0.82);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+  background: rgba(30, 36, 66, 0.85);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.45);
   color: #f8fafc;
 }
 .dark-mode .apple-sheet {
-  background: rgba(14, 17, 26, 0.95);
-  backdrop-filter: blur(35px);
-  -webkit-backdrop-filter: blur(35px);
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(24, 29, 54, 0.94);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
   color: #f8fafc;
 }
 .dark-mode .apple-input {
-  background: rgba(24, 28, 44, 0.92);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(36, 43, 76, 0.92);
+  border: 2px solid rgba(255, 255, 255, 0.18);
   color: #ffffff;
 }
 
-
 @media (max-width: 768px) {
   .light-mode .apple-glass, .light-mode .apple-sheet, .dark-mode .apple-glass, .dark-mode .apple-sheet {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
   }
 }

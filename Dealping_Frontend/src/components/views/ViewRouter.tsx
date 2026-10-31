@@ -23,12 +23,19 @@ interface ViewRouterProps {
   onEnterMain: (showTutorial?: boolean) => void
   onSpotlightStepChange: (step: SpotlightStep) => void
 
+  // Theme & Tutorial
+  isDark?: boolean
+  onToggleTheme?: () => void
+  onRestartTutorial?: () => void
+
   // Wishlist
   wishlistItems: any[]
   wishlistLoading: boolean
 
   // Price Charts
   analyzedCharts: ChartItem[]
+  isChartLoading?: boolean
+  onQuickAnalyzeUrl?: (url: string) => void
 
   // Account
   currentRank: Rank
@@ -60,7 +67,7 @@ interface ViewRouterProps {
   activeCount: number
   onInputChange: (slotNum: number, value: string) => void
   onTargetPriceChange: (slotNum: number, value: string) => void
-  onVariantSelect: (slotNum: number, variant: string) => void
+  onVariantSelect: (slotNum: number, variant: string, price?: number) => void
   onPaste: (slotNum: number) => void
   onActivate: (slotNum: number) => void
   onRemove: (slotNum: number) => void
@@ -99,9 +106,14 @@ export function ViewRouter({
   onNavigate,
   onEnterMain,
   onSpotlightStepChange,
+  isDark,
+  onToggleTheme,
+  onRestartTutorial,
   wishlistItems,
   wishlistLoading,
   analyzedCharts,
+  isChartLoading,
+  onQuickAnalyzeUrl,
   currentRank,
   friendsInvited,
   maxSlots,
@@ -189,8 +201,12 @@ export function ViewRouter({
       return (
         <PriceChartView
           analyzedCharts={analyzedCharts}
+          isChartLoading={isChartLoading}
+          isDark={isDark}
           onToggleMenu={onToggleMenu}
           isMenuOpen={isMenuOpen}
+          onQuickAnalyzeUrl={onQuickAnalyzeUrl}
+          onNavigateToMain={() => onNavigate("main")}
         />
       )
 
@@ -241,6 +257,9 @@ export function ViewRouter({
           onCloseUnlockModal={onCloseUnlockModal}
           showBumpSheet={showBumpSheet}
           onCloseBumpSheet={onCloseBumpSheet}
+          isDark={isDark}
+          onToggleTheme={onToggleTheme}
+          onRestartTutorial={onRestartTutorial}
         />
       )
 

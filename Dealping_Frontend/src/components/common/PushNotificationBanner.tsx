@@ -1,6 +1,7 @@
 import React from "react"
 import { PriceDropData } from "../../types"
 import { pricingService } from "../../services"
+import { DEALPING_LOGO_URI } from "../../constants"
 
 interface PushNotificationBannerProps {
   notification: PriceDropData | null
@@ -23,7 +24,7 @@ export function PushNotificationBanner({
   return (
     <div
       onClick={onOpenAlarm}
-      className="absolute top-11 left-3.5 right-3.5 z-50 p-3 rounded-[24px] bg-neutral-900/95 dark:bg-black/95 text-white backdrop-blur-sm md:backdrop-blur- border border-white/25 shadow-[0_16px_45px_rgba(0,0,0,0.65)] cursor-pointer animate-slide-down-notification transition-all duration-300 active:scale-98"
+      className="absolute top-11 left-3.5 right-3.5 z-50 p-3 rounded-[24px] bg-neutral-900/95 dark:bg-black/95 text-white backdrop-blur-sm border border-white/25 shadow-[0_16px_45px_rgba(0,0,0,0.65)] cursor-pointer animate-slide-down-notification transition-all duration-300 active:scale-98"
     >
       <div className="flex items-start space-x-2.5">
         <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-rose-500 to-amber-500 flex items-center justify-center text-lg shrink-0 shadow-md overflow-hidden">
@@ -33,12 +34,12 @@ export function PushNotificationBanner({
               alt=""
               className="w-full h-full object-cover rounded-2xl"
               onError={(e) => {
-                ;(e.currentTarget as HTMLElement).style.display = "none"
+                ;(e.currentTarget as HTMLImageElement).src = DEALPING_LOGO_URI
               }}
             />
           ) : (
             <img
-              src="/apple-touch-icon.png"
+              src={DEALPING_LOGO_URI}
               alt="DealPing Mascot"
               className="w-full h-full object-cover rounded-2xl"
             />

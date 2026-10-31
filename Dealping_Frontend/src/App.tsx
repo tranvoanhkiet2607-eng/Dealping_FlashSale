@@ -21,13 +21,38 @@ import {
 } from "./hooks"
 
 export default function App() {
-  const [isDark, setIsDark] = useState(true)
+  // Mặc định mở giao diện Sáng (Light Mode) tươi sáng, rõ nét; lưu lựa chọn của người dùng
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("dealping_theme_v2") === "dark"
+    } catch {
+      return false
+    }
+  })
+
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const slot1InputRef = useRef<HTMLInputElement>(null)
   const phoneScreenRef = useRef<HTMLDivElement>(null)
 
   // 1. Toast Notification System
   const { toast, showToast } = useToast()
+
+  const handleToggleTheme = () => {
+    setIsDark((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem("dealping_theme_v2", next ? "dark" : "light")
+      } catch {}
+      showToast(
+        next ? "🌙 Đã bật Chế độ Tối (Dark Mode)" : "☀️ Đã bật Chế độ Sáng (Light Mode)",
+        next
+          ? "Giao diện tối dịu mắt — bấm nút ☀️ Bật Sáng ở góc phải để đổi lại."
+          : "Giao diện sáng rõ nét — bấm nút 🌙 Bật Tối ở góc phải để đổi lại.",
+        next ? "🌙" : "☀️"
+      )
+      return next
+    })
+  }
 
   // 2. View Routing & Spotlight Tutorial Flow
   const {
@@ -69,7 +94,6 @@ export default function App() {
     detailModalSlot,
     setDetailModalSlot,
     currentDetailData,
-    hasEverTracked,
     setHasEverTracked,
     activeCount,
     handleInputChange,
@@ -98,13 +122,23 @@ export default function App() {
     setHasEverTracked
   )
 
-  // 7. Dynamic Price Chart Engine (12-hour history & mock curve)
-  const { analyzedCharts } = usePriceChart({
+  // 7. Dynamic Price Chart Engine
+  const { analyzedCharts, isChartLoading } = usePriceChart({
     view,
     slot1,
     slot2,
     slot3,
   })
+
+  // Quick analyze link directly from PriceChartView
+  const handleQuickAnalyzeUrl = (url: string) => {
+    handleInputChange(1, url)
+    showToast(
+      "📈 Đang phân tích biểu đồ giá",
+      "Đã nạp sản phẩm vào Radar & cập nhật biểu đồ biến động giá!",
+      "✨"
+    )
+  }
 
   // 8. Feedback & Slot 3 Unlock Engine
   const {
@@ -166,9 +200,10 @@ export default function App() {
       {/* Top Control Bar */}
       <TopControlBar
         isDark={isDark}
-        onToggleTheme={() => setIsDark(!isDark)}
+        onToggleTheme={handleToggleTheme}
         view={view}
         slot3Unlocked={slot3Unlocked}
+        slot2BubbleUnlocked={slot2BubbleUnlocked}
         onRestartTutorial={() => {
           setIsMenuOpen(false)
           restartTutorial()
@@ -185,9 +220,17 @@ export default function App() {
         onNavigate={setView}
         onEnterMain={enterMain}
         onSpotlightStepChange={setSpotlightStep}
+        isDark={isDark}
+        onToggleTheme={handleToggleTheme}
+        onRestartTutorial={() => {
+          setIsMenuOpen(false)
+          restartTutorial()
+        }}
         wishlistItems={wishlistItems}
         wishlistLoading={wishlistLoading}
         analyzedCharts={analyzedCharts}
+        isChartLoading={isChartLoading}
+        onQuickAnalyzeUrl={handleQuickAnalyzeUrl}
         currentRank={currentRank}
         friendsInvited={friendsInvited}
         maxSlots={maxSlots}
@@ -277,6 +320,8 @@ export default function App() {
         finishTutorial={finishTutorial}
         slot1InputRef={slot1InputRef}
         phoneScreenRef={phoneScreenRef}
+        isDark={isDark}
+        onToggleTheme={handleToggleTheme}
         showToast={showToast}
       />
 
@@ -290,6 +335,12 @@ export default function App() {
         slot3Unlocked={slot3Unlocked}
         onOpenFeedback={() => setShowFeedbackModal(true)}
         onBlockedFeedbackClick={handleBlockedFeedbackClick}
+        isDark={isDark}
+        onToggleTheme={handleToggleTheme}
+        onRestartTutorial={() => {
+          setIsMenuOpen(false)
+          restartTutorial()
+        }}
         className="absolute top-[140px] right-5"
       />
     </AppLayout>

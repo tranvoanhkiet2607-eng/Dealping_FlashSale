@@ -38,6 +38,9 @@ interface MainViewProps {
   onCloseUnlockModal: () => void
   showBumpSheet: boolean
   onCloseBumpSheet: () => void
+  isDark?: boolean
+  onToggleTheme?: () => void
+  onRestartTutorial?: () => void
 }
 
 export function MainView({
@@ -73,6 +76,9 @@ export function MainView({
   onCloseUnlockModal,
   showBumpSheet,
   onCloseBumpSheet,
+  isDark,
+  onToggleTheme,
+  onRestartTutorial,
 }: MainViewProps) {
   const allowedSlots = Math.max(
     slot3Unlocked ? 3 : slot2BubbleUnlocked ? 2 : 1,
@@ -83,7 +89,7 @@ export function MainView({
     <div className="flex-1 min-h-0 max-w-7xl w-full mx-auto px-4 lg:px-8 py-3 lg:py-6 flex flex-col lg:flex-row items-stretch gap-6 relative z-10">
       {/* Radar Left Panel: Centered on mobile, beautifully framed on desktop */}
       <div className="w-full lg:w-[400px] xl:w-[440px] lg:shrink-0 flex flex-col lg:self-stretch relative z-30">
-        <div className="lg:bg-white/85 dark:lg:bg-[#101322]/80 lg:border lg:border-slate-200/80 dark:lg:border-white/10 lg:backdrop-blur-xl lg:rounded-3xl lg:shadow-xl dark:lg:shadow-2xl flex-1 flex flex-col relative overflow-visible lg:overflow-hidden transition-all duration-300">
+        <div className="lg:bg-white/90 dark:lg:bg-[#1b203a]/85 lg:border lg:border-slate-200/90 dark:lg:border-white/15 lg:backdrop-blur-xl lg:rounded-3xl lg:shadow-xl dark:lg:shadow-2xl flex-1 flex flex-col relative overflow-visible lg:overflow-hidden transition-all duration-300">
           <RadarHeader
             bubbles={bubbles}
             onPopBubble={onPopBubble}
@@ -99,25 +105,28 @@ export function MainView({
             slot3Unlocked={slot3Unlocked}
             onOpenFeedback={onOpenFeedback}
             onBlockedFeedbackClick={onBlockedFeedbackClick}
+            isDark={isDark}
+            onToggleTheme={onToggleTheme}
+            onRestartTutorial={onRestartTutorial}
           />
         </div>
       </div>
 
       {/* Sheet containing Slot Cards: Bottom sheet on mobile, right panel on desktop */}
-      <div className="flex-1 min-h-0 apple-sheet lg:bg-white/85 dark:lg:bg-[#101322]/80 rounded-t-[36px] lg:rounded-3xl lg:border lg:border-slate-200/80 dark:lg:border-white/10 lg:backdrop-blur-xl lg:shadow-xl dark:lg:shadow-2xl px-5 lg:px-7 pt-3 lg:pt-6 pb-12 lg:pb-6 shadow-[0_-10px_35px_rgba(0,0,0,0.12)] flex flex-col z-10 lg:self-stretch transition-all duration-300">
+      <div className="flex-1 min-h-0 apple-sheet lg:bg-white/90 dark:lg:bg-[#1b203a]/85 rounded-t-[36px] lg:rounded-3xl lg:border lg:border-slate-200/90 dark:lg:border-white/15 lg:backdrop-blur-xl lg:shadow-xl dark:lg:shadow-2xl px-5 lg:px-7 pt-3 lg:pt-6 pb-12 lg:pb-6 shadow-[0_-10px_35px_rgba(0,0,0,0.08)] flex flex-col z-10 lg:self-stretch transition-all duration-300">
         <div className="w-10 h-1.5 bg-slate-400/40 rounded-full mx-auto mb-2 lg:hidden" />
 
-        <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-200/80 dark:border-white/5 shrink-0">
+        <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-200/80 dark:border-white/10 shrink-0">
           <div>
             <div className="flex items-center space-x-2">
               <h3 className="text-lg lg:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 dark:from-pink-400 dark:to-amber-300">
                 Săn Deal Siêu Tốc
               </h3>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-pink-100 dark:bg-pink-500/15 text-pink-700 dark:text-pink-400 text-[10px] font-bold border border-pink-200 dark:border-pink-400/20">
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-pink-100 dark:bg-pink-500/20 text-pink-700 dark:text-pink-300 text-[10px] font-bold border border-pink-200 dark:border-pink-400/30">
                 Tự động bắt đáy 24/7
               </span>
             </div>
-            <p className="text-[10px] opacity-80 font-semibold text-pink-600 dark:text-pink-500 mt-0.5">
+            <p className="text-[10px] font-semibold text-pink-600 dark:text-pink-400 mt-0.5">
               Tối đa {allowedSlots} ô{" "}
               {slot3Unlocked
                 ? "(Đã mở khóa VIP Ô #3)"
@@ -126,23 +135,23 @@ export function MainView({
                   : "(Chạm 10 bóng quanh Radar để mở Ô #2)"}
             </p>
           </div>
-          <span className="px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-[10px] lg:text-[11px] font-bold border border-purple-200 dark:border-purple-500/30">
+          <span className="px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-500/25 text-purple-700 dark:text-purple-200 text-[10px] lg:text-[11px] font-bold border border-purple-200 dark:border-purple-400/40">
             {activeCount}/{allowedSlots} ô đang chạy
           </span>
         </div>
 
         {/* Bubble game banner */}
         {!slot2BubbleUnlocked && maxSlots >= 2 && (
-          <div className="bg-gradient-to-r from-pink-500/15 via-purple-500/15 to-cyan-500/15 border border-pink-400/30 rounded-[22px] p-2.5 mb-3 flex items-center justify-between backdrop-blur-sm">
+          <div className="bg-gradient-to-r from-pink-500/15 via-purple-500/15 to-cyan-500/15 border border-pink-400/35 rounded-[22px] p-2.5 mb-3 flex items-center justify-between backdrop-blur-sm">
             <div>
               <div className="flex items-center space-x-1">
                 <span className="text-sm">🫧</span>
-                <span className="text-[10px] font-bold">
+                <span className="text-[10px] font-bold text-slate-800 dark:text-white">
                   Chạm 10 bóng quanh Radar để mở Ô #2
                 </span>
               </div>
               <div className="flex items-center space-x-2 mt-1">
-                <div className="w-24 h-1.5 bg-black/20 rounded-full overflow-hidden border border-pink-400/30">
+                <div className="w-24 h-1.5 bg-slate-200 dark:bg-black/30 rounded-full overflow-hidden border border-pink-400/30">
                   <div
                     className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-300"
                     style={{
@@ -150,12 +159,12 @@ export function MainView({
                     }}
                   />
                 </div>
-                <span className="text-[9px] font-bold text-pink-400">
+                <span className="text-[9px] font-bold text-pink-600 dark:text-pink-300">
                   {bubblesPopped} / 10 🫧
                 </span>
               </div>
             </div>
-            <span className="text-[8px] bg-pink-500/20 text-pink-400 px-2 py-1 rounded-xl font-semibold animate-pulse">
+            <span className="text-[8px] bg-pink-500/20 text-pink-700 dark:text-pink-300 px-2 py-1 rounded-xl font-bold animate-pulse border border-pink-400/30">
               Bấm bóng trên Radar!
             </span>
           </div>
@@ -175,7 +184,7 @@ export function MainView({
               onTargetPriceChange={(v) => onTargetPriceChange(3, v)}
               variant={slot3.variant}
               variantOptions={slot3.variantOptions}
-              accentActive="text-amber-400"
+              accentActive="text-amber-500 dark:text-amber-400"
               accentBtn="bg-amber-500"
               productEmoji="✨"
               productName={slot3.productName}
@@ -215,7 +224,7 @@ export function MainView({
               onTargetPriceChange={(v) => onTargetPriceChange(2, v)}
               variant={slot2.variant}
               variantOptions={slot2.variantOptions}
-              accentActive="text-pink-400"
+              accentActive="text-pink-600 dark:text-pink-400"
               accentBtn="bg-pink-500"
               productEmoji="🛍️"
               productName={slot2.productName}
@@ -249,7 +258,7 @@ export function MainView({
             <SlotCard
               slotNum={1}
               label="📍 Ô TÌM SỐ 1"
-              labelClass="bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-transparent"
+              labelClass="bg-purple-100 dark:bg-purple-500/25 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-400/30"
               active={slot1.active}
               input={slot1.input}
               inputRef={slot1InputRef}
@@ -258,7 +267,7 @@ export function MainView({
               onTargetPriceChange={(v) => onTargetPriceChange(1, v)}
               variant={slot1.variant}
               variantOptions={slot1.variantOptions}
-              accentActive="text-purple-400"
+              accentActive="text-purple-600 dark:text-purple-400"
               accentBtn="bg-purple-600"
               basePrice={slot1.basePrice}
               originalPrice={slot1.originalPrice}
@@ -289,12 +298,12 @@ export function MainView({
         </div>
 
         {/* Desktop Helper Footer */}
-        <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-white/10 hidden lg:flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 shrink-0 font-medium">
+        <div className="mt-3 pt-3 border-t border-slate-200/80 dark:border-white/15 hidden lg:flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 shrink-0 font-medium">
           <div className="flex items-center space-x-2">
             <span className="text-sm">🛡️</span>
             <span className="text-[11px]">DealPing không can thiệp tài khoản - Chỉ giám sát giá công khai & hú còi</span>
           </div>
-          <div className="flex items-center space-x-1.5 text-[10px] text-pink-600 dark:text-pink-400/90 font-semibold">
+          <div className="flex items-center space-x-1.5 text-[10px] text-pink-600 dark:text-pink-300 font-semibold">
             <span>Shopee • TikTok Shop • Lazada</span>
           </div>
         </div>

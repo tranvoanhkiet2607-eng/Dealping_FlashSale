@@ -93,59 +93,42 @@ export function useTrackingSlots(
           localStorage.setItem("dealping_has_tracked", "true")
         } catch {}
 
-        if (items[0]) {
-          setSlot1((prev) => ({
+        const mapItemToSlot = (item: any, defaultTitle: string, prev: SlotItemState): SlotItemState => {
+          const origNum = Number(item.originalPrice || item.livePrice || 0)
+          const targetNum = Number(item.targetPrice || 0)
+          const baseNum = origNum > 0 ? origNum : targetNum > 0 ? Math.round((targetNum / 0.72) / 1000) * 1000 : 0
+          return {
             ...prev,
-            itemId: items[0].id,
-            input: items[0].shopeeUrl || items[0].productUrl || items[0].url || "",
-            productName: items[0].productName || "Món 1 đang theo dõi",
-            productPrice: items[0].targetPrice ? pricingService.formatVND(items[0].targetPrice) : "",
-            targetPrice: items[0].targetPrice ? pricingService.formatInputNumber(items[0].targetPrice) : "",
-            basePrice: Number(items[0].originalPrice || 0),
-            variant: items[0].variantName || prev.variant,
-            imageUrl: items[0].imageUrl || null,
-            lastChecked: items[0].lastCheckedAgo || items[0].lastCheckedText || prev.lastChecked,
-            status: items[0].statusLabel || prev.status,
-            advice: items[0].advice || prev.advice,
+            itemId: item.id || item.itemId || prev.itemId,
+            input: item.shopeeUrl || item.productUrl || item.url || "",
+            productName: item.productName || defaultTitle,
+            productPrice: baseNum > 0 ? pricingService.formatVND(baseNum) : targetNum > 0 ? pricingService.formatVND(targetNum) : "",
+            previewPrice: baseNum > 0 ? pricingService.formatVND(baseNum) : "",
+            targetPrice: targetNum > 0 ? pricingService.formatInputNumber(targetNum) : "",
+            basePrice: baseNum,
+            originalPrice: origNum > 0 ? origNum : baseNum,
+            voucherPrice: item.voucherPrice ? Number(item.voucherPrice) : null,
+            variant: item.variantName || prev.variant,
+            imageUrl: item.imageUrl || item.liveImageUrl || null,
+            affiliateUrl: item.affiliateUrl || null,
+            lastChecked: item.lastCheckedAgo || item.lastCheckedText || prev.lastChecked,
+            status: item.statusLabel || prev.status,
+            advice: item.advice || prev.advice,
             active: true,
-          }))
+          }
+        }
+
+        if (items[0]) {
+          setSlot1((prev) => mapItemToSlot(items[0], "Món 1 đang theo dõi", prev))
         }
 
         if (items[1]) {
-          setSlot2((prev) => ({
-            ...prev,
-            itemId: items[1].id,
-            input: items[1].shopeeUrl || items[1].productUrl || items[1].url || "",
-            productName: items[1].productName || "Món 2 đang theo dõi",
-            productPrice: items[1].targetPrice ? pricingService.formatVND(items[1].targetPrice) : "",
-            targetPrice: items[1].targetPrice ? pricingService.formatInputNumber(items[1].targetPrice) : "",
-            basePrice: Number(items[1].originalPrice || 0),
-            variant: items[1].variantName || prev.variant,
-            imageUrl: items[1].imageUrl || null,
-            lastChecked: items[1].lastCheckedAgo || items[1].lastCheckedText || prev.lastChecked,
-            status: items[1].statusLabel || prev.status,
-            advice: items[1].advice || prev.advice,
-            active: true,
-          }))
+          setSlot2((prev) => mapItemToSlot(items[1], "Món 2 đang theo dõi", prev))
           setSlot2BubbleUnlocked(true)
         }
 
         if (items[2]) {
-          setSlot3((prev) => ({
-            ...prev,
-            itemId: items[2].id,
-            input: items[2].shopeeUrl || items[2].productUrl || items[2].url || "",
-            productName: items[2].productName || "Món 3 đang theo dõi",
-            productPrice: items[2].targetPrice ? pricingService.formatVND(items[2].targetPrice) : "",
-            targetPrice: items[2].targetPrice ? pricingService.formatInputNumber(items[2].targetPrice) : "",
-            basePrice: Number(items[2].originalPrice || 0),
-            variant: items[2].variantName || prev.variant,
-            imageUrl: items[2].imageUrl || null,
-            lastChecked: items[2].lastCheckedAgo || items[2].lastCheckedText || prev.lastChecked,
-            status: items[2].statusLabel || prev.status,
-            advice: items[2].advice || prev.advice,
-            active: true,
-          }))
+          setSlot3((prev) => mapItemToSlot(items[2], "Món 3 đang theo dõi", prev))
           setSlot3Unlocked(true)
         }
       }
@@ -300,31 +283,45 @@ export function useTrackingSlots(
 
     setSlot((prev) => ({ ...prev, sending: true }))
     try {
+      const parsedTarget = pricingService.parseVND(slot.targetPrice)
+      const origToSend = slot.basePrice > 0 ? slot.basePrice : slot.originalPrice > 0 ? slot.originalPrice : undefined
+
       const result = await trackingApiService.sendToBackend(
         slot.input,
-        pricingService.parseVND(slot.targetPrice),
+        parsedTarget,
         slot.variant,
         slot.previewName || undefined,
-        slot.imageUrl || undefined
+        slot.imageUrl || undefined,
+        origToSend
       )
 
       const resolvedName =
         result?.data?.productName ||
         result?.productName ||
         slot.previewName ||
+        urlParserService.extractCleanProductName(slot.input) ||
         `Món ${slotNum} đang theo dõi`
 
-      setSlot((prev) => ({
-        ...prev,
-        itemId: result?.data?.id || prev.itemId,
-        productName: resolvedName,
-        productPrice: prev.targetPrice,
-        lastChecked: result?.data?.lastCheckedAgo || result?.data?.lastCheckedText || prev.lastChecked,
-        status: result?.data?.statusLabel || prev.status,
-        advice: result?.data?.advice || prev.advice,
-        active: true,
-        sending: false,
-      }))
+      setSlot((prev) => {
+        const displayPrice =
+          prev.previewPrice ||
+          (prev.basePrice > 0
+            ? pricingService.formatVND(prev.basePrice)
+            : prev.targetPrice
+              ? pricingService.formatVND(prev.targetPrice)
+              : "")
+        return {
+          ...prev,
+          itemId: result?.data?.id || prev.itemId,
+          productName: resolvedName,
+          productPrice: displayPrice,
+          lastChecked: result?.data?.lastCheckedAgo || result?.data?.lastCheckedText || prev.lastChecked,
+          status: result?.data?.statusLabel || prev.status,
+          advice: result?.data?.advice || prev.advice,
+          active: true,
+          sending: false,
+        }
+      })
 
       setHasEverTracked(true)
       try {

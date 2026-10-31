@@ -13,41 +13,42 @@ export function BumpSheet({
   onClose,
   slot3Unlocked,
   onOpenFeedback,
-  slot1Variant,
 }: BumpSheetProps) {
   if (!isOpen) return null
 
   return (
-    <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center p-3 animate-new-slot">
-      <div className="w-full apple-sheet rounded-[36px] p-5 shadow-2xl text-center relative border border-white/20">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-black/65 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 animate-new-slot">
+      <div className="w-full max-w-md apple-sheet rounded-[36px] p-5 shadow-2xl text-center relative border border-slate-200 dark:border-white/20">
         <div className="w-10 h-1 bg-slate-400/40 rounded-full mx-auto mb-3" />
         <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-500/20 to-pink-500/20 border-4 border-purple-400/30 mx-auto flex items-center justify-center text-2xl mb-2 shadow-inner">
           🔔
         </div>
-        <h3 className="text-sm font-black mb-1">Đã Khóa Mục Tiêu Theo Dõi!</h3>
+        <h3 className="text-sm font-black mb-1 text-slate-900 dark:text-white">
+          Đã Khóa Mục Tiêu Theo Dõi!
+        </h3>
         <div className="p-3 bg-purple-500/15 rounded-[22px] border border-purple-400/30 mb-2">
-          <p className="text-xs font-bold text-purple-400 leading-relaxed">
+          <p className="text-xs font-bold text-purple-700 dark:text-purple-300 leading-relaxed">
             "Chúng tôi đang theo dõi đúng phân loại màu/size, hãy yên tâm nhé."
           </p>
         </div>
-        <p className="text-[10px] opacity-75 px-2 leading-normal">
+        <p className="text-[10px] text-slate-600 dark:text-slate-300 px-2 leading-normal font-medium">
           Nguyên tắc: Tối đa 2 món để đảm bảo tốc độ cào giá siêu tốc. Khi mua
           xong bạn có thể bấm "🗑️ Đổi món" bất cứ lúc nào!
         </p>
 
         {/* Thông báo hướng dẫn mở khóa Ô #3 sau khi hoàn thành theo dõi */}
         {!slot3Unlocked && (
-          <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-rose-500/15 to-purple-500/20 border border-amber-400/50 text-left shadow-sm">
+          <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-purple-500/15 border border-amber-400/50 text-left shadow-sm">
             <div className="flex items-center space-x-1.5 mb-1">
               <span className="text-sm">🎁</span>
-              <span className="text-[11px] font-black text-amber-300">
+              <span className="text-[11px] font-black text-amber-700 dark:text-amber-300">
                 QUÀ TẶNG: MỞ KHÓA THÊM Ô TÌM SỐ 3!
               </span>
               <span className="text-[8px] bg-red-500 text-white font-black px-1.5 py-0.2 rounded-full animate-pulse">
                 HOT
               </span>
             </div>
-            <p className="text-[9.5px] text-white/85 leading-relaxed">
+            <p className="text-[9.5px] text-slate-700 dark:text-white/90 leading-relaxed font-medium">
               Bạn đã hoàn thành theo dõi món đồ! Giờ đây bạn đã đủ điều kiện vào{" "}
               <b>Menu (☰)</b> để gửi Đánh giá & nhận ngay <b>Ô TÌM SỐ 3</b> hoàn
               toàn miễn phí.
@@ -69,7 +70,7 @@ export function BumpSheet({
             </button>
             <button
               onClick={onClose}
-              className="w-full py-2.5 rounded-[24px] bg-white/10 hover:bg-white/15 text-white/80 font-bold text-xs flex items-center justify-center space-x-2 active:scale-95 transition cursor-pointer border border-white/20"
+              className="w-full py-2.5 rounded-[24px] bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-700 dark:text-white/90 font-bold text-xs flex items-center justify-center space-x-2 active:scale-95 transition cursor-pointer border border-slate-300 dark:border-white/20"
             >
               <span>Tôi đã yên tâm rồi, cảm ơn!</span>
             </button>
