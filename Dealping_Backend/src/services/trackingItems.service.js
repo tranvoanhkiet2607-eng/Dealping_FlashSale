@@ -6,7 +6,14 @@ const tiktokPriceService = require("./tiktokPriceService");
 const lazadaPriceService = require("./lazadaPriceService");
 const affiliateService = require("./affiliate.service");
 const axios = require("axios");
-const { enqueueShopeeTask, getCachedVoucherPrice } = require("../routes/worker.routes");
+const {
+  enqueueShopeeTask,
+  requestWorkerLivePrice,
+  getCachedVoucherPrice,
+  getCachedVoucherData,
+  updateCachedProductMeta,
+  isItemPendingOrInFlight,
+} = require("../routes/worker.routes");
 
 /**
  * unlockedSlot2 = false -> tối đa 1 item
@@ -39,7 +46,7 @@ async function createTrackingItem({
       data: {
         id: userId,
         email: `guest_${userId.substring(0, 8)}@dealping.com`,
-      }
+      },
     });
   }
 
@@ -48,7 +55,7 @@ async function createTrackingItem({
   if (currentCount >= 3) {
     const oldestItem = await prisma.trackingItem.findFirst({
       where: { userId },
-      orderBy: { createdAt: 'asc' }
+      orderBy: { createdAt: "asc" },
     });
     if (oldestItem) {
       await prisma.trackingItem.delete({ where: { id: oldestItem.id } });
@@ -72,7 +79,7 @@ async function createTrackingItem({
     }
     const updated = await prisma.trackingItem.update({
       where: { id: existing.id },
-      data: updateData
+      data: updateData,
     });
     return serializeItem(updated);
   }
@@ -113,7 +120,7 @@ async function createTrackingItem({
       if (!workerVoucher && itemId) {
         try {
           const dbCache = await prisma.shopeeProductCache.findUnique({
-            where: { itemId: BigInt(itemId) }
+            where: { itemId: BigInt(itemId) },
           });
           if (dbCache && Number(dbCache.price) > 0) {
             workerVoucher = Number(dbCache.price);
@@ -122,6 +129,7 @@ async function createTrackingItem({
       }
       if (workerVoucher && workerVoucher > 0) {
         voucherPrice = workerVoucher;
+        currentPrice = workerVoucher;
       }
     } else if (platform === "TIKTOK") {
       const priceInfo = await tiktokPriceService.fetchCurrentPrice(resolvedUrl || finalUrl, itemId, finalUrl);
@@ -281,15 +289,15 @@ async function listBatchTrackingItems(userId) {
 
   // Lọc ra các item thuộc Shopee và có itemId
   const shopeeItemIds = items
-    .filter(item => item.platform === "SHOPEE" && item.itemId)
-    .map(item => item.itemId.toString());
+    .filter((item) => item.platform === "SHOPEE" && item.itemId)
+    .map((item) => item.itemId.toString());
 
   let batchPrices = {};
   if (shopeeItemIds.length > 0) {
     batchPrices = await shopeePriceService.fetchBatchPrices(shopeeItemIds);
   }
 
-  return items.map(item => {
+  return items.map((item) => {
     const serialized = serializeItem(item);
 
     // Gắn thêm dữ liệu giá mới nhất nếu có
@@ -305,14 +313,14 @@ async function listBatchTrackingItems(userId) {
         // Nếu item có chọn model cụ thể, lấy giá của model đó
         if (item.selectedModelId && liveData.variants && liveData.variants.length > 0) {
           const selectedVariant = liveData.variants.find(
-            v => v.modelId && v.modelId.toString() === item.selectedModelId.toString()
+            (v) => v.modelId && v.modelId.toString() === item.selectedModelId.toString()
           );
           if (selectedVariant && selectedVariant.price > 0) {
             livePrice = selectedVariant.price;
           }
         }
 
-        serialized.livePrice = livePrice;
+        serialized.livePrice = cachedVoucher || livePrice;
         serialized.liveProductName = liveData.productName;
         serialized.liveImageUrl = liveData.imageUrl;
         serialized.lastCheckedAt = new Date().toISOString();
@@ -320,10 +328,12 @@ async function listBatchTrackingItems(userId) {
         serialized.lastCheckedText = "Vừa xong";
 
         // Cập nhật ngầm timestamp quét giá mới nhất vào database
-        prisma.trackingItem.update({
-          where: { id: item.id },
-          data: { lastCheckedAt: new Date() }
-        }).catch(() => { });
+        prisma.trackingItem
+          .update({
+            where: { id: item.id },
+            data: { lastCheckedAt: new Date() },
+          })
+          .catch(() => {});
       }
     }
 
@@ -342,6 +352,7 @@ async function previewTrackingItem(urlParams) {
   let currentPrice = null;
   let imageUrl = null;
   let voucherPrice = null;
+  let voucherPending = false;
   let variants = [];
   let affiliateUrl = resolvedUrl;
 
@@ -355,36 +366,101 @@ async function previewTrackingItem(urlParams) {
 
   let originalPrice = null;
 
+  // 1. Ngay khi tách được itemId và resolvedUrl: kiểm tra ngay getCachedVoucherPrice(itemId).
+  // Nếu đã có sẵn trong Cache (< 30 phút) -> Trả kết quả ngay lập tức trong 0.05s!
+  if (platform === "SHOPEE" && itemId) {
+    const cachedVoucherPrice = getCachedVoucherPrice(itemId);
+    if (cachedVoucherPrice && cachedVoucherPrice > 0) {
+      const cachedData = getCachedVoucherData(itemId) || {};
+      const detectedPrice = Number(cachedVoucherPrice);
+      const cachedName =
+        cachedData.productName &&
+        cachedData.productName !== "Không thể lấy tên sản phẩm" &&
+        cachedData.productName !== "Đang cập nhật..."
+          ? cachedData.productName
+          : extractProductNameFromUrl(resolvedUrl) || "Sản phẩm theo dõi";
+      const cachedOriginalPrice =
+        cachedData.originalStrikePrice && Number(cachedData.originalStrikePrice) > detectedPrice
+          ? Number(cachedData.originalStrikePrice)
+          : Math.max(Number(cachedData.originalPrice || 0), Math.round(detectedPrice * 1.15));
+
+      return {
+        productName: cachedName,
+        currentPrice: detectedPrice,
+        originalPrice: cachedOriginalPrice,
+        price: detectedPrice,
+        resolvedUrl,
+        platform,
+        variants: cachedData.variants || [],
+        imageUrl: cachedData.imageUrl || null,
+        voucherPrice: detectedPrice,
+        voucherPending: false,
+        affiliateUrl,
+        itemId: itemId.toString(),
+      };
+    }
+  }
+
   try {
     if (platform === "SHOPEE") {
-      if (itemId) {
-        enqueueShopeeTask(itemId, resolvedUrl || finalUrl);
-      }
-      const priceInfo = await shopeePriceService.fetchCurrentPrice(itemId, shopId, resolvedUrl);
-      currentPrice = priceInfo.price;
-      originalPrice = priceInfo.originalPrice || currentPrice;
-      productName = priceInfo.productName;
-      imageUrl = priceInfo.imageUrl || null;
-      variants = priceInfo.variants || [];
-      // Use actual voucher/commission data from API only — no guessing
-      if (priceInfo.isXtra && Number(priceInfo.sellerComFinal) > 0) {
-        const voucherDiscount = Math.floor(Number(priceInfo.sellerComFinal) / 10000) * 10000;
-        voucherPrice = voucherDiscount > 0 ? Number(priceInfo.price) - voucherDiscount : null;
-      }
-      // Ưu tiên giá sau voucher từ máy trạm (Worker Extension DOM) nếu có
-      let workerVoucher = getCachedVoucherPrice(itemId);
-      if (!workerVoucher && itemId) {
-        try {
-          const dbCache = await prisma.shopeeProductCache.findUnique({
-            where: { itemId: BigInt(itemId) }
+      // 2. Nếu chưa có trong Cache -> Lập tức gọi SONG SONG (Promise.all) ngay từ giây 0.2
+      const [workerData, priceInfo] = await Promise.all([
+        itemId ? requestWorkerLivePrice(itemId, resolvedUrl || finalUrl, 4000) : Promise.resolve(null),
+        shopeePriceService.fetchCurrentPrice(itemId, shopId, resolvedUrl),
+      ]);
+
+      if (priceInfo) {
+        currentPrice = priceInfo.price;
+        originalPrice = priceInfo.originalPrice || currentPrice;
+        productName = priceInfo.productName;
+        imageUrl = priceInfo.imageUrl || null;
+        variants = priceInfo.variants || [];
+
+        if (itemId) {
+          updateCachedProductMeta(itemId, {
+            productName: priceInfo.productName,
+            imageUrl: priceInfo.imageUrl || null,
+            variants: priceInfo.variants || [],
+            originalPrice: priceInfo.originalPrice || priceInfo.price || 0,
           });
-          if (dbCache && Number(dbCache.price) > 0) {
-            workerVoucher = Number(dbCache.price);
-          }
-        } catch (e) {}
+        }
       }
-      if (workerVoucher && workerVoucher > 0) {
-        voucherPrice = workerVoucher;
+
+      if (workerData && Number(workerData.detectedPrice) > 0) {
+        // Extension đang bật (online), trả Giá Sau Voucher trong vòng 4.0s
+        const price = Number(workerData.detectedPrice);
+        currentPrice = price;
+        voucherPrice = price;
+        originalPrice =
+          workerData.originalStrikePrice && Number(workerData.originalStrikePrice) > price
+            ? Number(workerData.originalStrikePrice)
+            : Math.max(
+                (priceInfo && (priceInfo.originalPrice || priceInfo.price)) || 0,
+                Math.round(price * 1.15)
+              );
+
+        if (
+          (!productName ||
+            productName === "Không thể lấy tên sản phẩm" ||
+            productName === "Đang cập nhật...") &&
+          workerData.productName
+        ) {
+          productName = workerData.productName;
+        }
+        if (!imageUrl && workerData.imageUrl) {
+          imageUrl = workerData.imageUrl;
+        }
+        voucherPending = false;
+      } else {
+        // Cầu chì an toàn sau 4.0s: trả giá của addlivetag về trước kèm cờ voucherPending: true
+        if (priceInfo && priceInfo.voucherPrice && Number(priceInfo.voucherPrice) > 0) {
+          voucherPrice = Number(priceInfo.voucherPrice);
+          currentPrice = voucherPrice;
+        } else if (priceInfo && priceInfo.isXtra && Number(priceInfo.sellerComFinal) > 0) {
+          const voucherDiscount = Math.floor(Number(priceInfo.sellerComFinal) / 10000) * 10000;
+          voucherPrice = voucherDiscount > 0 ? Number(priceInfo.price) - voucherDiscount : null;
+        }
+        voucherPending = Boolean(itemId);
       }
     } else if (platform === "TIKTOK") {
       const priceInfo = await tiktokPriceService.fetchCurrentPrice(resolvedUrl || finalUrl, itemId, finalUrl);
@@ -419,32 +495,63 @@ async function previewTrackingItem(urlParams) {
     variants,
     imageUrl,
     voucherPrice,
+    voucherPending,
     affiliateUrl,
-    voucherPending: Boolean(platform === "SHOPEE" && !voucherPrice && itemId),
-    itemId: itemId ? itemId.toString() : null
+    itemId: itemId ? itemId.toString() : null,
   };
 }
 
+/**
+ * API: GET /api/tracking-items/live-voucher/:itemId
+ * Trả về dữ liệu mới nhất từ processedVoucherCache để Frontend tự đồng bộ lại nếu tab quét xong trễ
+ */
 async function getLiveVoucher(itemId) {
-  if (!itemId) return { detectedPrice: null, voucherPrice: null };
-  let detectedPrice = getCachedVoucherPrice(itemId);
-  if (!detectedPrice) {
-    try {
-      const dbCache = await prisma.shopeeProductCache.findUnique({
-        where: { itemId: BigInt(itemId) }
-      });
-      if (dbCache && Number(dbCache.price) > 0) {
-        detectedPrice = Number(dbCache.price);
-      }
-    } catch (e) {}
+  if (!itemId) {
+    return { status: "pending", found: false, detectedPrice: null, voucherPrice: null };
   }
+  const idStr = itemId.toString();
+  const cachedData = getCachedVoucherData(idStr);
+
+  if (cachedData && Number(cachedData.voucherPrice) > 0) {
+    const detectedPrice = Number(cachedData.voucherPrice);
+    const originalPrice =
+      cachedData.originalStrikePrice && Number(cachedData.originalStrikePrice) > detectedPrice
+        ? Number(cachedData.originalStrikePrice)
+        : Math.max(Number(cachedData.originalPrice || 0), Math.round(detectedPrice * 1.15));
+
+    return {
+      status: "success",
+      found: true,
+      voucherPending: false,
+      itemId: idStr,
+      price: detectedPrice,
+      currentPrice: detectedPrice,
+      voucherPrice: detectedPrice,
+      detectedPrice,
+      originalPrice,
+      originalStrikePrice: cachedData.originalStrikePrice || null,
+      productName: cachedData.productName || null,
+      imageUrl: cachedData.imageUrl || null,
+      shopVouchers: cachedData.shopVouchers || [],
+      capturedAt: cachedData.capturedAt,
+    };
+  }
+
   return {
-    status: "success",
-    itemId: itemId.toString(),
-    detectedPrice: detectedPrice ? Number(detectedPrice) : null,
-    voucherPrice: detectedPrice ? Number(detectedPrice) : null
+    status: "pending",
+    found: false,
+    voucherPending: isItemPendingOrInFlight(idStr),
+    itemId: idStr,
+    price: null,
+    currentPrice: null,
+    voucherPrice: null,
+    detectedPrice: null,
+    originalPrice: null,
+    capturedAt: null,
   };
 }
+
+const getLiveVoucherPrice = getLiveVoucher;
 
 async function updateTargetPrice(id, targetPrice, userId) {
   const where = userId ? { id, userId } : { id };
@@ -492,7 +599,7 @@ async function simulatePriceDrop(id, userId) {
         timestamp: now,
       },
     });
-  } catch (e) { }
+  } catch (e) {}
 
   // 3. Tạo thông báo trong Database & bắn Push Notification
   const notificationService = require("./notificationService");
@@ -507,7 +614,7 @@ async function simulatePriceDrop(id, userId) {
       newPrice: dropPrice,
       targetPrice: dropPrice,
     });
-  } catch (e) { }
+  } catch (e) {}
 
   return serializeItem(updated);
 }
@@ -519,12 +626,12 @@ module.exports = {
   deleteTrackingItem,
   getTrackingItemHistory,
   previewTrackingItem,
+  getLiveVoucher,
+  getLiveVoucherPrice,
   getTrackingItemChartHistory,
   listBatchTrackingItems,
   serializeItem,
   formatTimeAgo,
   updateTargetPrice,
   simulatePriceDrop,
-  getLiveVoucher,
 };
-

@@ -4,6 +4,10 @@ const shopeePriceService = require("./shopeePriceService");
 const tiktokPriceService = require("./tiktokPriceService");
 const lazadaPriceService = require("./lazadaPriceService");
 const { notifyPriceDrop } = require("./notificationService");
+const { getCachedVoucherPrice } = require("../routes/worker.routes");
+
+// Các khung giờ vàng Shopee tung mã giảm giá (0h, 9h, 12h, 20h, 21h)
+const SHOPEE_VOUCHER_HOURS = [0, 9, 12, 20, 21];
 
 /**
  * Chia mảng thành các chunk nhỏ hơn
@@ -19,10 +23,50 @@ function chunkArray(array, size) {
 /**
  * Xử lý khi có giá mới hoặc khi bot rà soát giá xong
  */
-async function processPriceUpdate(item, currentPrice) {
+async function processPriceUpdate(item, currentPrice, itemData = {}) {
   const now = new Date();
-  const hasValidPrice = Boolean(currentPrice && currentPrice > 0);
-  const isTargetHit = Boolean(hasValidPrice && currentPrice <= item.targetPrice.toNumber());
+  const itemId = item.itemId ? item.itemId.toString() : null;
+  const targetPriceNum =
+    item.targetPrice && typeof item.targetPrice.toNumber === "function"
+      ? item.targetPrice.toNumber()
+      : Number(item.targetPrice);
+
+  // Ưu tiên lấy giá thực tế: Giá Sau Voucher từ máy trạm -> Giá Flash Sale -> Giá hiện tại
+  const effectivePrice =
+    (item.platform === "SHOPEE" && itemId ? getCachedVoucherPrice(itemId) : null) ||
+    (itemData && itemData.flashSalePrice) ||
+    currentPrice;
+
+  const hasValidPrice = Boolean(effectivePrice && effectivePrice > 0);
+
+  // Kiểm tra khung giờ Shopee tung mã (0h, 9h, 12h, 20h, 21h) theo giờ Việt Nam & giờ hệ thống
+  const vnHour =
+    Number(
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Ho_Chi_Minh",
+        hour: "numeric",
+        hour12: false,
+      }).format(now)
+    ) % 24;
+  const isShopeeVoucherHour =
+    SHOPEE_VOUCHER_HOURS.includes(now.getHours()) ||
+    SHOPEE_VOUCHER_HOURS.includes(vnHour);
+
+  const isDirectHit = Boolean(hasValidPrice && effectivePrice <= targetPriceNum);
+  const baseListedPrice = currentPrice && currentPrice > 0 ? currentPrice : effectivePrice;
+  const isVoucherHourHit = Boolean(
+    hasValidPrice &&
+    item.platform === "SHOPEE" &&
+    isShopeeVoucherHour &&
+    (baseListedPrice * 0.85 <= targetPriceNum || effectivePrice * 0.85 <= targetPriceNum)
+  );
+
+  const isTargetHit = isDirectHit || isVoucherHourHit;
+  const finalAlertPrice = isDirectHit
+    ? effectivePrice
+    : isVoucherHourHit
+      ? Math.round(Math.min(baseListedPrice, effectivePrice) * 0.85)
+      : effectivePrice;
 
   try {
     // Luôn cập nhật lastCheckedAt để chứng minh bot vừa quét thật
@@ -31,7 +75,7 @@ async function processPriceUpdate(item, currentPrice) {
       data: {
         lastCheckedAt: now,
         ...(isTargetHit ? { status: "TARGET_HIT" } : {}),
-        ...(hasValidPrice && !item.originalPrice ? { originalPrice: currentPrice } : {}),
+        ...(hasValidPrice && !item.originalPrice ? { originalPrice: effectivePrice } : {}),
       },
     });
   } catch (err) {
@@ -45,7 +89,7 @@ async function processPriceUpdate(item, currentPrice) {
     await prisma.priceHistory.create({
       data: {
         trackingItemId: item.id,
-        price: currentPrice,
+        price: finalAlertPrice,
         timestamp: now,
       },
     });
@@ -57,7 +101,7 @@ async function processPriceUpdate(item, currentPrice) {
   if (isTargetHit) {
     console.log(
       `[CRON] 🎯 TING TING SẬP GIÁ: Sản phẩm ${item.productName || item.id
-      } đã đạt giá mục tiêu (${currentPrice} <= ${item.targetPrice.toNumber()})!`
+      } đã đạt giá mục tiêu (${finalAlertPrice} <= ${targetPriceNum})!`
     );
 
     // Tạo thông báo sập giá in-app & gửi Push Notification
@@ -68,9 +112,13 @@ async function processPriceUpdate(item, currentPrice) {
         trackingItemId: item.id,
         productName: item.productName || "Sản phẩm bạn đang theo dõi",
         productUrl: item.productUrl || "",
-        oldPrice: item.originalPrice ? item.originalPrice.toNumber() : Math.round(currentPrice * 1.3),
-        newPrice: currentPrice,
-        targetPrice: item.targetPrice.toNumber(),
+        oldPrice: item.originalPrice
+          ? typeof item.originalPrice.toNumber === "function"
+            ? item.originalPrice.toNumber()
+            : Number(item.originalPrice)
+          : Math.round(finalAlertPrice * 1.3),
+        newPrice: finalAlertPrice,
+        targetPrice: targetPriceNum,
       });
       console.log(`[CRON] Đã ghi nhận thông báo sập giá cho user ${item.userId}`);
     } catch (notifyErr) {
@@ -78,7 +126,8 @@ async function processPriceUpdate(item, currentPrice) {
     }
   } else {
     console.log(
-      `[CRON] 🔍 [Rình giá] Sản phẩm ${item.productName || item.id} giá: ${currentPrice}đ (Mục tiêu: ${item.targetPrice.toNumber()}đ). lastCheckedAt đã cập nhật.`
+      `[CRON] 🔍 [Rình giá] Sản phẩm ${item.productName || item.id
+      } giá: ${effectivePrice}đ (Mục tiêu: ${targetPriceNum}đ). lastCheckedAt đã cập nhật.`
     );
   }
 }
@@ -112,30 +161,42 @@ async function runPriceCheckBot() {
     console.log(`[CRON] Đang rà soát ${trackingItems.length} sản phẩm theo dõi...`);
 
     // Phân tách Shopee và các nền tảng khác
-    const shopeeItems = trackingItems.filter(item => item.platform === "SHOPEE" && item.itemId != null);
-    const otherItems = trackingItems.filter(item => item.platform !== "SHOPEE" || item.itemId == null);
+    const shopeeItems = trackingItems.filter(
+      (item) => item.platform === "SHOPEE" && item.itemId != null
+    );
+    const otherItems = trackingItems.filter(
+      (item) => item.platform !== "SHOPEE" || item.itemId == null
+    );
 
     // 1. Xử lý Shopee qua Batch API
     const shopeeChunks = chunkArray(shopeeItems, 100);
     for (const chunk of shopeeChunks) {
-      const itemIds = chunk.map(i => i.itemId.toString());
+      const itemIds = chunk.map((i) => i.itemId.toString());
       try {
         const batchResults = await shopeePriceService.fetchBatchPrices(itemIds);
         for (const item of chunk) {
-          const itemIdStr = item.itemId.toString();
-          const itemData = batchResults[itemIdStr];
+          const itemId = item.itemId.toString();
+          const itemData = batchResults[itemId] || {};
           let currentPrice = itemData ? itemData.price : null;
 
-          if (itemData && item.selectedModelId && itemData.variants && itemData.variants.length > 0) {
+          if (
+            itemData &&
+            item.selectedModelId &&
+            itemData.variants &&
+            itemData.variants.length > 0
+          ) {
             const selectedVariant = itemData.variants.find(
-              v => v.modelId && v.modelId.toString() === item.selectedModelId.toString()
+              (v) => v.modelId && v.modelId.toString() === item.selectedModelId.toString()
             );
             if (selectedVariant && selectedVariant.price > 0) {
               currentPrice = selectedVariant.price;
             }
           }
 
-          await processPriceUpdate(item, currentPrice);
+          const effectivePrice =
+            getCachedVoucherPrice(itemId) || itemData.flashSalePrice || currentPrice;
+
+          await processPriceUpdate(item, effectivePrice, itemData);
         }
       } catch (e) {
         console.error("[CRON] Lỗi khi gọi Shopee Batch API:", e.message);
@@ -146,15 +207,17 @@ async function runPriceCheckBot() {
       }
     }
 
-    // 2. Xử lý TikTok và Lazada
+    // 2. Xử lý TikTok và Lazada (hoặc Shopee không có itemId)
     for (const item of otherItems) {
       let currentPrice = null;
+      let itemData = {};
       try {
         const url = item.productUrl;
 
         if (item.platform === "SHOPEE") {
           const shopeeInfo = await shopeePriceService.fetchCurrentPrice(null, null, url);
           currentPrice = shopeeInfo ? shopeeInfo.price : null;
+          itemData = shopeeInfo || {};
         } else if (item.platform === "TIKTOK") {
           const tiktokInfo = await tiktokPriceService.fetchCurrentPrice(url);
           currentPrice = tiktokInfo ? tiktokInfo.price : null;
@@ -166,7 +229,13 @@ async function runPriceCheckBot() {
         console.error(`[CRON] Lỗi khi quét giá cho sản phẩm ${item.id}:`, error.message);
       }
 
-      await processPriceUpdate(item, currentPrice);
+      const itemId = item.itemId ? item.itemId.toString() : null;
+      const effectivePrice =
+        (item.platform === "SHOPEE" && itemId ? getCachedVoucherPrice(itemId) : null) ||
+        itemData.flashSalePrice ||
+        currentPrice;
+
+      await processPriceUpdate(item, effectivePrice, itemData);
     }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -191,8 +260,8 @@ function startCronJobs() {
   // Kích hoạt 1 lượt quét ngay khi server khởi động (delay 3s để hoàn tất khởi động)
   setTimeout(() => {
     console.log("[CRON] Chạy lượt quét khởi động ban đầu để làm mới lastCheckedAt...");
-    runPriceCheckBot().catch(err => console.error("[CRON] Lỗi quét khởi động:", err));
+    runPriceCheckBot().catch((err) => console.error("[CRON] Lỗi quét khởi động:", err));
   }, 3000);
 }
 
-module.exports = { startCronJobs, runPriceCheckBot };
+module.exports = { startCronJobs, runPriceCheckBot, processPriceUpdate };

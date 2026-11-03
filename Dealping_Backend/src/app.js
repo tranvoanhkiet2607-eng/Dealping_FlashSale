@@ -8,7 +8,7 @@ const userRoutes = require("./routes/user.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const dealRoutes = require("./routes/deal.routes");
 const feedbackRoutes = require("./routes/feedback.routes");
-const { router: workerRoutes } = require("./routes/worker.routes");
+const workerRoutes = require("./routes/worker.routes");
 const firebaseAdmin = require("./config/firebase");
 
 const app = express();

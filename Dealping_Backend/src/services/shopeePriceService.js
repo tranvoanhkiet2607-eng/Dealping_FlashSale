@@ -1,6 +1,6 @@
 const axios = require("axios");
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const prisma = require("../config/prisma");
+const { getCachedVoucherPrice, updateCachedProductMeta } = require("../routes/worker.routes");
 
 /**
  * Lấy giá và thông tin sản phẩm Shopee qua AddLiveTag API
@@ -19,16 +19,16 @@ async function fetchCurrentPrice(itemId, shopId, url = "") {
   try {
     const apiUrl = `https://data.addlivetag.com/product-data/product-data.php?item_id=${itemId}`;
     const response = await axios.get(apiUrl, {
-      headers: apiKey ? { 'X-API-Key': apiKey } : {},
+      headers: apiKey ? { "X-API-Key": apiKey } : {},
       params: apiKey ? { key: apiKey } : {}, // Gửi kèm query string dự phòng
-      timeout: 15000
+      timeout: 15000,
     });
 
     const data = response.data;
     console.log("[Shopee API Response]:", JSON.stringify(data).slice(0, 300));
 
     // Nếu API trả về object có productInfo, data, hoặc trả trực tiếp
-    const product = data.productInfo ? data.productInfo : (data.data ? data.data : data);
+    const product = data.productInfo ? data.productInfo : data.data ? data.data : data;
 
     // API có thể trả về trường 'name' hoặc 'productName'
     const name = product.productName || product.name;
@@ -36,10 +36,17 @@ async function fetchCurrentPrice(itemId, shopId, url = "") {
 
     if (product && (priceVal !== undefined || name)) {
       // Ưu tiên: giá Flash Sale -> giá đáy (minPrice) trong priceStats -> price gốc
-      const minPrice = (product.priceStats && product.priceStats.minPrice > 0) ? product.priceStats.minPrice : null;
+      const minPrice =
+        product.priceStats && product.priceStats.minPrice > 0 ? product.priceStats.minPrice : null;
       const price = parseFloat(product.flashSalePrice) || parseFloat(minPrice) || parseFloat(priceVal) || 0;
       const productName = name || "Sản phẩm Shopee";
       const imageUrl = product.imageUrl || product.image || product.image_url || null;
+
+      // Kiểm tra nếu itemId đang có giá mới trong processedVoucherCache (< 30 phút)
+      // thì KHÔNG được ghi đè cột price của ShopeeProductCache
+      const cachedVoucherPrice = getCachedVoucherPrice(itemId);
+      const hasFreshVoucher = Boolean(cachedVoucherPrice && cachedVoucherPrice > 0);
+      const effectivePrice = hasFreshVoucher ? cachedVoucherPrice : price;
 
       // Lưu/Cập nhật bản ghi cache vào DB
       try {
@@ -47,50 +54,69 @@ async function fetchCurrentPrice(itemId, shopId, url = "") {
           where: { itemId: BigInt(itemId) },
           update: {
             productName: productName,
-            price: price,
-            imageUrl: imageUrl
+            ...(hasFreshVoucher ? {} : { price: price }),
+            imageUrl: imageUrl,
           },
           create: {
             itemId: BigInt(itemId),
             productName: productName,
-            price: price,
-            imageUrl: imageUrl
-          }
+            price: effectivePrice,
+            imageUrl: imageUrl,
+          },
         });
       } catch (dbErr) {
         console.error("[DB Error] Lỗi khi lưu cache Shopee:", dbErr.message);
       }
 
-      let rawModels = product.models || (product.item && product.item.models) || (data.data && data.data.item && data.data.item.models) || product.variations || [];
+      let rawModels =
+        product.models ||
+        (product.item && product.item.models) ||
+        (data.data && data.data.item && data.data.item.models) ||
+        product.variations ||
+        [];
 
-      const variants = rawModels.map(m => {
-        let p = m.price || m.original_price || m.current_price;
-        if (p && p > 100000) p = p / 100000;
-        return {
-          modelId: m.modelid || m.id || m.variation_id || m.name,
-          name: m.name || m.variation_name || m.model_name || "M?u",
-          price: p || priceVal,
-          stock: m.stock || m.normal_stock || 0
-        };
-      }).filter(v => v.name && v.price > 0);
+      const variants = rawModels
+        .map((m) => {
+          let p = m.price || m.original_price || m.current_price;
+          if (p && p > 100000) p = p / 100000;
+          return {
+            modelId: m.modelid || m.id || m.variation_id || m.name,
+            name: m.name || m.variation_name || m.model_name || "Mẫu",
+            price: p || priceVal,
+            stock: m.stock || m.normal_stock || 0,
+          };
+        })
+        .filter((v) => v.name && v.price > 0);
 
-      const rawOriginal = (product.priceStats && product.priceStats.maxPrice > 0)
-        ? product.priceStats.maxPrice
-        : (product.latestPriceHistory?.originalPrice || product.price);
+      const rawOriginal =
+        product.priceStats && product.priceStats.maxPrice > 0
+          ? product.priceStats.maxPrice
+          : product.latestPriceHistory?.originalPrice || product.price;
       const originalPrice = parseFloat(rawOriginal) || price;
+      const finalVariants =
+        variants.length > 0 ? variants : product.variants || product.tier_variations || [];
+
+      updateCachedProductMeta(itemId, {
+        productName,
+        imageUrl,
+        variants: finalVariants,
+        originalPrice,
+      });
 
       return {
-        price: price,
-        currentPrice: price,
+        price: effectivePrice,
+        currentPrice: effectivePrice,
         originalPrice: originalPrice,
+        voucherPrice: hasFreshVoucher ? cachedVoucherPrice : null,
         productName: productName,
         imageUrl: imageUrl,
-        isXtra: false,
-        sellerComFinal: 0,
-        variants: variants.length > 0 ? variants : (product.variants || product.tier_variations || []),
+        isXtra: hasFreshVoucher,
+        sellerComFinal:
+          hasFreshVoucher && price > cachedVoucherPrice ? price - cachedVoucherPrice : 0,
+        variants: finalVariants,
         flashSalePrice: parseFloat(product.flashSalePrice) || null,
         cashbackCommission: 0,
-        discountCodes: []
+        discountCodes: [],
       };
     }
   } catch (err) {
@@ -98,24 +124,29 @@ async function fetchCurrentPrice(itemId, shopId, url = "") {
 
     // CƠ CHẾ FALLBACK: Truy vấn vào Cache DB nếu API AddLiveTag chết
     try {
+      const cachedVoucherPrice = getCachedVoucherPrice(itemId);
       const cached = await prisma.shopeeProductCache.findUnique({
-        where: { itemId: BigInt(itemId) }
+        where: { itemId: BigInt(itemId) },
       });
 
-      if (cached) {
+      if (cached || cachedVoucherPrice) {
         console.log(`[Shopee Fallback] Dùng data dự phòng cho itemId ${itemId}`);
+        const dbPrice = cached ? Number(cached.price) || 0 : 0;
+        const effectivePrice = cachedVoucherPrice || dbPrice;
         return {
-          price: Number(cached.price) || 0,
-          currentPrice: Number(cached.price) || 0,
-          originalPrice: Number(cached.price) || 0,
-          productName: cached.productName || "Đang cập nhật...",
-          imageUrl: cached.imageUrl || null,
-          isXtra: false,
-          sellerComFinal: 0,
+          price: effectivePrice,
+          currentPrice: effectivePrice,
+          originalPrice: dbPrice || effectivePrice,
+          voucherPrice: cachedVoucherPrice || null,
+          productName: (cached && cached.productName) || "Đang cập nhật...",
+          imageUrl: (cached && cached.imageUrl) || null,
+          isXtra: Boolean(cachedVoucherPrice),
+          sellerComFinal:
+            cachedVoucherPrice && dbPrice > cachedVoucherPrice ? dbPrice - cachedVoucherPrice : 0,
           variants: [],
           flashSalePrice: null,
           cashbackCommission: 0,
-          discountCodes: []
+          discountCodes: [],
         };
       }
     } catch (fallbackErr) {
@@ -131,6 +162,7 @@ function defaultFallback() {
     price: 0,
     currentPrice: 0,
     originalPrice: 0,
+    voucherPrice: null,
     productName: "Đang cập nhật...",
     imageUrl: null,
     isXtra: false,
@@ -138,7 +170,7 @@ function defaultFallback() {
     variants: [],
     flashSalePrice: null,
     cashbackCommission: 0,
-    discountCodes: []
+    discountCodes: [],
   };
 }
 
@@ -155,11 +187,17 @@ async function fetchBatchPrices(itemIds) {
 
   try {
     const apiUrl = `https://data.addlivetag.com/product-data/product-data-batch.php`;
-    const response = await axios.post(apiUrl, { item_ids: itemIds }, {
-      headers: apiKey ? { 'X-API-Key': apiKey, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' },
-      params: apiKey ? { key: apiKey } : {},
-      timeout: 30000
-    });
+    const response = await axios.post(
+      apiUrl,
+      { item_ids: itemIds },
+      {
+        headers: apiKey
+          ? { "X-API-Key": apiKey, "Content-Type": "application/json" }
+          : { "Content-Type": "application/json" },
+        params: apiKey ? { key: apiKey } : {},
+        timeout: 30000,
+      }
+    );
 
     const data = response.data;
     const items = data.products || data.data || data;
@@ -175,43 +213,64 @@ async function fetchBatchPrices(itemIds) {
           const priceVal = item.price;
           const name = item.productName || item.name;
           // Ưu tiên: giá Flash Sale -> giá đáy (minPrice) trong priceStats -> price gốc
-          const minPrice = (item.priceStats && item.priceStats.minPrice > 0) ? item.priceStats.minPrice : null;
-          const price = parseFloat(item.flashSalePrice) || parseFloat(minPrice) || parseFloat(priceVal) || 0;
+          const minPrice =
+            item.priceStats && item.priceStats.minPrice > 0 ? item.priceStats.minPrice : null;
+          const price =
+            parseFloat(item.flashSalePrice) || parseFloat(minPrice) || parseFloat(priceVal) || 0;
           const productName = name || "Sản phẩm Shopee";
           const imageUrl = item.imageUrl || item.image || item.image_url || null;
 
           const rawModels = item.models || [];
-          const variants = rawModels.map(m => ({
+          const variants = rawModels.map((m) => ({
             modelId: m.modelid,
             name: m.name,
-            price: (m.price && m.price > 100000) ? m.price / 100000 : m.price,
-            stock: m.stock
+            price: m.price && m.price > 100000 ? m.price / 100000 : m.price,
+            stock: m.stock,
           }));
 
-          resultMap[itemId.toString()] = {
-            price: price,
-            currentPrice: price,
-            originalPrice: parseFloat(
-              (item.priceStats && item.priceStats.maxPrice > 0)
+          // Kiểm tra nếu itemId đang có giá mới trong processedVoucherCache (< 30 phút)
+          // thì KHÔNG ghi đè cột price của ShopeeProductCache và lấy voucherPrice trả về
+          const cachedVoucherPrice = getCachedVoucherPrice(itemId);
+          const hasFreshVoucher = Boolean(cachedVoucherPrice && cachedVoucherPrice > 0);
+          const effectivePrice = hasFreshVoucher ? cachedVoucherPrice : price;
+          const originalPrice =
+            parseFloat(
+              item.priceStats && item.priceStats.maxPrice > 0
                 ? item.priceStats.maxPrice
-                : (item.latestPriceHistory?.originalPrice || priceVal)
-            ) || price,
+                : item.latestPriceHistory?.originalPrice || priceVal
+            ) || price;
+
+          resultMap[itemId.toString()] = {
+            price: effectivePrice,
+            currentPrice: effectivePrice,
+            originalPrice: originalPrice,
+            voucherPrice: hasFreshVoucher ? cachedVoucherPrice : null,
             productName: productName,
             imageUrl: imageUrl,
-            isXtra: false,
-            sellerComFinal: 0,
+            isXtra: hasFreshVoucher,
+            sellerComFinal:
+              hasFreshVoucher && price > cachedVoucherPrice ? price - cachedVoucherPrice : 0,
             variants: variants,
-            flashSalePrice: parseFloat(item.flashSalePrice) || null
+            flashSalePrice: parseFloat(item.flashSalePrice) || null,
           };
 
-          // Upsert db
+          // Upsert db (không ghi đè price nếu đang có giá mới trong processedVoucherCache < 30 phút)
           try {
             await prisma.shopeeProductCache.upsert({
               where: { itemId: BigInt(itemId) },
-              update: { productName, price, imageUrl },
-              create: { itemId: BigInt(itemId), productName, price, imageUrl }
+              update: {
+                productName,
+                ...(hasFreshVoucher ? {} : { price }),
+                imageUrl,
+              },
+              create: {
+                itemId: BigInt(itemId),
+                productName,
+                price: effectivePrice,
+                imageUrl,
+              },
             });
-          } catch (e) { }
+          } catch (e) {}
         }
       }
     }
@@ -220,19 +279,25 @@ async function fetchBatchPrices(itemIds) {
     // CƠ CHẾ FALLBACK: Truy vấn vào Cache DB cho danh sách itemIds
     try {
       const cachedItems = await prisma.shopeeProductCache.findMany({
-        where: { itemId: { in: itemIds.map(id => BigInt(id)) } }
+        where: { itemId: { in: itemIds.map((id) => BigInt(id)) } },
       });
       for (const cached of cachedItems) {
-        resultMap[cached.itemId.toString()] = {
-          price: Number(cached.price) || 0,
-          currentPrice: Number(cached.price) || 0,
-          originalPrice: Number(cached.price) || 0,
+        const idStr = cached.itemId.toString();
+        const cachedVoucherPrice = getCachedVoucherPrice(idStr);
+        const dbPrice = Number(cached.price) || 0;
+        const effectivePrice = cachedVoucherPrice || dbPrice;
+        resultMap[idStr] = {
+          price: effectivePrice,
+          currentPrice: effectivePrice,
+          originalPrice: dbPrice || effectivePrice,
+          voucherPrice: cachedVoucherPrice || null,
           productName: cached.productName || "Đang cập nhật...",
           imageUrl: cached.imageUrl || null,
-          isXtra: false,
-          sellerComFinal: 0,
+          isXtra: Boolean(cachedVoucherPrice),
+          sellerComFinal:
+            cachedVoucherPrice && dbPrice > cachedVoucherPrice ? dbPrice - cachedVoucherPrice : 0,
           variants: [],
-          flashSalePrice: null
+          flashSalePrice: null,
         };
       }
     } catch (fallbackErr) {
@@ -255,9 +320,9 @@ async function fetchPriceHistory(itemId) {
   try {
     const apiUrl = `https://data.addlivetag.com/price-tracking/history.php?item_ids=${itemId}&days=90&changes_only=1&format=chart`;
     const response = await axios.get(apiUrl, {
-      headers: apiKey ? { 'X-API-Key': apiKey } : {},
+      headers: apiKey ? { "X-API-Key": apiKey } : {},
       params: apiKey ? { key: apiKey } : {},
-      timeout: 10000
+      timeout: 10000,
     });
 
     if (response.data) {

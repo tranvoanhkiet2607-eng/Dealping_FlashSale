@@ -49,6 +49,16 @@ const preview = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data });
 });
 
+const getLiveVoucher = asyncHandler(async (req, res) => {
+  const { itemId } = req.params;
+  const data = await trackingItemsService.getLiveVoucher(itemId);
+  res.status(200).json({
+    success: true,
+    ...data,
+    data,
+  });
+});
+
 const getBatch = asyncHandler(async (req, res) => {
   const { userId } = req.query;
   const items = await trackingItemsService.listBatchTrackingItems(userId);
@@ -72,12 +82,6 @@ const simulateDrop = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: item, message: "Đã kích hoạt sập giá trong DB" });
 });
 
-const getLiveVoucher = asyncHandler(async (req, res) => {
-  const { itemId } = req.params;
-  const data = await trackingItemsService.getLiveVoucher(itemId);
-  res.status(200).json({ success: true, ...data });
-});
-
 module.exports = {
   create,
   list,
@@ -85,9 +89,8 @@ module.exports = {
   getHistory,
   getChartHistory,
   preview,
+  getLiveVoucher,
   getBatch,
   updateTargetPrice,
   simulateDrop,
-  getLiveVoucher,
 };
-
