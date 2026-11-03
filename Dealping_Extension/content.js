@@ -147,6 +147,10 @@
     let originalStrikePrice = null;
     let shopVouchers = [];
 
+    // Lấy ảnh sản phẩm từ meta tag og:image
+    const ogImg = document.querySelector('meta[property="og:image"]');
+    const imageUrl = ogImg ? ogImg.getAttribute("content") : null;
+
     const allElements = Array.from(document.querySelectorAll("div, span, section"));
 
     // 1. Tìm nhãn "Giá Sau Voucher"
@@ -201,6 +205,25 @@
       }
     }
 
+    // Tìm giá gạch ngang kế bên nếu chưa có để biết Giá Gốc ban đầu là bao nhiêu
+    if (!originalStrikePrice) {
+      for (const el of allElements) {
+        if (el.childElementCount <= 1) {
+          const style = window.getComputedStyle(el);
+          if (
+            style.textDecorationLine &&
+            style.textDecorationLine.includes("line-through")
+          ) {
+            const p = parseVndPrice(el.textContent);
+            if (p && (!detectedPrice || p > detectedPrice)) {
+              originalStrikePrice = p;
+              break;
+            }
+          }
+        }
+      }
+    }
+
     // 3. Quét các thẻ "Mã Giảm Giá Của Shop"
     for (const el of allElements) {
       if (
@@ -235,9 +258,10 @@
       itemId,
       url: url.split("?")[0],
       productName,
+      imageUrl,
       detectedPrice,
       isVoucherPrice,
-      originalStrikePrice,
+      originalStrikePrice: originalStrikePrice || detectedPrice,
       shopVouchers,
       tier1,
       tier2,
@@ -282,12 +306,26 @@
     }, 3500);
   }
 
+  let scanAttempts = 0;
   let lastPrice = null;
   let lastItemId = null;
+  let scanInterval = null;
 
   function scanAndCache() {
+    scanAttempts++;
     const data = extractShopeeProductData();
-    if (data && (data.detectedPrice !== lastPrice || data.itemId !== lastItemId)) {
+    if (!data) return;
+
+    // Trong 4 lần quét đầu tiên (tức ~2.4s đầu):
+    // CHỈ gửi kết quả về background.js nếu tìm thấy nhãn "Giá sau voucher" (data.isVoucherPrice === true).
+    // Hễ thấy isVoucherPrice === true là bắn về và đóng tab ngay lập tức!
+    if (scanAttempts <= 4 && !data.isVoucherPrice) {
+      return;
+    }
+
+    // Từ lần 5 trở đi (sau 2.5s, trang đã load 100%) mà món hàng không có nhãn "Giá sau voucher",
+    // HOẶC nếu đã bắt được isVoucherPrice === true ở các lần quét:
+    if (data.detectedPrice !== lastPrice || data.itemId !== lastItemId) {
       lastPrice = data.detectedPrice;
       lastItemId = data.itemId;
 
@@ -307,9 +345,22 @@
       } catch (e) {}
 
       showMiniToast(data);
+
+      if (scanInterval) {
+        clearInterval(scanInterval);
+        scanInterval = null;
+      }
     }
   }
 
-  setInterval(scanAndCache, 1500);
-  setTimeout(scanAndCache, 700);
+  // 1. Cuộn nhẹ sau 500ms để kích hoạt Shopee render khung Voucher và giả lập người dùng thật
+  setTimeout(() => {
+    try {
+      window.scrollBy({ top: 100, behavior: "smooth" });
+    } catch (e) {}
+  }, 500);
+
+  // 2. Nhịp quét: lần đầu ở 900ms, sau đó mỗi 500ms lặp lại
+  setTimeout(scanAndCache, 900);
+  scanInterval = setInterval(scanAndCache, 500);
 })();

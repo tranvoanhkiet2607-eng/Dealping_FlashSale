@@ -144,10 +144,12 @@ export function useTrackingSlots(
     useEffect(() => {
       if (slot.input.length > 10 && slot.input.startsWith("http") && slot.expanded && !slot.active) {
         let isSubscribed = true
+        const activeTimers: ReturnType<typeof setTimeout>[] = []
+        const currentInput = slot.input
         setSlot((prev) => ({ ...prev, previewLoading: true }))
 
         trackingApiService
-          .fetchPreview(slot.input)
+          .fetchPreview(currentInput)
           .then((data) => {
             if (isSubscribed) {
               const pName =
@@ -155,11 +157,13 @@ export function useTrackingSlots(
                 !data.productName.includes("Không thể lấy") &&
                 !data.productName.includes("Could not get")
                   ? data.productName
-                  : urlParserService.extractCleanProductName(slot.input)
+                  : urlParserService.extractCleanProductName(currentInput)
 
               const rawPrice = Number(data.price) || Number(data.currentPrice) || 0
               const origPrice = Number(data.originalPrice) || Number(data.original_price) || rawPrice
-              const autoTarget = pricingService.calculateDefaultTarget(rawPrice, origPrice)
+              const initialVoucher = data.voucherPrice && Number(data.voucherPrice) > 0 ? Number(data.voucherPrice) : null
+              const effectivePrice = initialVoucher || rawPrice
+              const autoTarget = pricingService.calculateDefaultTarget(effectivePrice, origPrice)
 
               let firstVariant = ""
               let variantOptions: any[] = []
@@ -179,7 +183,7 @@ export function useTrackingSlots(
                 basePrice: rawPrice,
                 originalPrice: origPrice,
                 previewPrice: pricingService.formatVND(rawPrice),
-                voucherPrice: data.voucherPrice ? Number(data.voucherPrice) : null,
+                voucherPrice: initialVoucher,
                 imageUrl: data.imageUrl || prev.imageUrl,
                 affiliateUrl: data.affiliateUrl || data.offerLink || prev.affiliateUrl,
                 targetPrice: pricingService.formatInputNumber(autoTarget),
@@ -187,13 +191,46 @@ export function useTrackingSlots(
                 variant: firstVariant || prev.variant,
                 previewLoading: false,
               }))
+
+              // Nếu kết quả /preview trả về có cờ voucherPending === true
+              // (xảy ra khi rất đông người cùng dán link một lúc làm hàng đợi quá 4.0s),
+              // cho App đặt setTimeout sau 2.5s và 5s gọi nhẹ vào GET /api/tracking-items/live-voucher/:itemId.
+              // Hễ có detectedPrice mới trả về là tự động cập nhật lại voucherPrice, basePrice và Nấc 1, Nấc 2 ngay trên màn hình!
+              const idMatch = currentInput.match(/-i\.(\d+)\.(\d+)/) || currentInput.match(/\/product\/(\d+)\/(\d+)/)
+              const resolvedItemId = data.itemId || (idMatch ? idMatch[2] : null)
+
+              if ((data.voucherPending || !initialVoucher) && resolvedItemId) {
+                const pollVoucher = async () => {
+                  if (!isSubscribed) return
+                  try {
+                    const res = await trackingApiService.fetchLiveVoucher(String(resolvedItemId))
+                    const detected = Number(res.detectedPrice || res.voucherPrice)
+                    if (detected && detected > 0 && isSubscribed) {
+                      setSlot((prev) => {
+                        if (prev.input !== currentInput) return prev
+                        const effectiveOrig = prev.originalPrice || origPrice || detected
+                        const newTarget = pricingService.calculateDefaultTarget(detected, effectiveOrig)
+                        return {
+                          ...prev,
+                          voucherPrice: detected,
+                          basePrice: detected,
+                          targetPrice: pricingService.formatInputNumber(newTarget),
+                        }
+                      })
+                    }
+                  } catch (e) {}
+                }
+
+                activeTimers.push(setTimeout(pollVoucher, 2500))
+                activeTimers.push(setTimeout(pollVoucher, 5000))
+              }
             }
           })
           .catch(() => {
             if (isSubscribed) {
               setSlot((prev) => ({
                 ...prev,
-                previewName: urlParserService.extractCleanProductName(slot.input),
+                previewName: urlParserService.extractCleanProductName(currentInput),
                 basePrice: 0,
                 originalPrice: 0,
                 previewPrice: "",
@@ -204,6 +241,7 @@ export function useTrackingSlots(
           })
         return () => {
           isSubscribed = false
+          activeTimers.forEach(clearTimeout)
         }
       }
     }, [slot.input, slot.expanded, slot.active])

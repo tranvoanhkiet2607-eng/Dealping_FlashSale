@@ -199,10 +199,32 @@ export class TrackingApiService {
       price: 0,
       currentPrice: 0,
       voucherPrice: null,
+      voucherPending: false,
       imageUrl: null,
       affiliateUrl: url,
       variants: [],
     }
+  }
+
+  /**
+   * Polls live voucher price captured by worker extension or DB cache
+   * GET /api/tracking-items/live-voucher/:itemId
+   */
+  public async fetchLiveVoucher(
+    itemId: string
+  ): Promise<{ detectedPrice?: number | null; voucherPrice?: number | null }> {
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/api/tracking-items/live-voucher/${encodeURIComponent(itemId)}`
+      )
+      if (response.ok) {
+        const result = await response.json()
+        return result.data || result
+      }
+    } catch (e) {
+      console.warn("Backend live-voucher endpoint query failed:", e)
+    }
+    return { detectedPrice: null, voucherPrice: null }
   }
 
   /**

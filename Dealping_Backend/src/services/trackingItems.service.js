@@ -420,7 +420,29 @@ async function previewTrackingItem(urlParams) {
     imageUrl,
     voucherPrice,
     affiliateUrl,
+    voucherPending: Boolean(platform === "SHOPEE" && !voucherPrice && itemId),
     itemId: itemId ? itemId.toString() : null
+  };
+}
+
+async function getLiveVoucher(itemId) {
+  if (!itemId) return { detectedPrice: null, voucherPrice: null };
+  let detectedPrice = getCachedVoucherPrice(itemId);
+  if (!detectedPrice) {
+    try {
+      const dbCache = await prisma.shopeeProductCache.findUnique({
+        where: { itemId: BigInt(itemId) }
+      });
+      if (dbCache && Number(dbCache.price) > 0) {
+        detectedPrice = Number(dbCache.price);
+      }
+    } catch (e) {}
+  }
+  return {
+    status: "success",
+    itemId: itemId.toString(),
+    detectedPrice: detectedPrice ? Number(detectedPrice) : null,
+    voucherPrice: detectedPrice ? Number(detectedPrice) : null
   };
 }
 
@@ -503,5 +525,6 @@ module.exports = {
   formatTimeAgo,
   updateTargetPrice,
   simulatePriceDrop,
+  getLiveVoucher,
 };
 

@@ -4,6 +4,7 @@ const controller = require("../controllers/trackingItems.controller");
 const router = express.Router();
 
 router.post("/preview", controller.preview); // POST /api/tracking-items/preview
+router.get("/live-voucher/:itemId", controller.getLiveVoucher); // GET /api/tracking-items/live-voucher/:itemId
 router.get("/batch", controller.getBatch); // GET /api/tracking-items/batch?userId=...
 router.post("/", controller.create); // POST /api/tracking-items
 router.get("/", controller.list); // GET  /api/tracking-items?userId=...

@@ -1,13 +1,21 @@
 // DealPing Auto Worker & Bridge — Background Service Worker (MV3)
-// Nhiệm vụ:
-// 1. Khi ở "Chế độ Máy Trạm (Auto Worker)" trên máy Kiệt/Quân/Huy:
-//    Định kỳ hỏi Backend trên Render xem có link Shopee/TikTok nào khách vừa dán trên điện thoại cần đọc Giá Sau Voucher không.
-// 2. Tự động mở tab Shopee/TikTok ngầm (active: false), đợi content.js bóc xong giá (244.072₫ / 29.000₫),
-//    bắn kết quả về Backend Render rồi LẬP TỨC ĐÓNG TAB (chrome.tabs.remove) để không tốn RAM!
+// Chế độ "Tàng hình (Stealth Mode)":
+// 1. Mỗi máy chỉ mở DUY NHẤT 1 TAB tại 1 thời điểm, tự động đóng tab sau khi bóc xong giá hoặc gặp timeout/captcha.
+// 2. Cooldown nghỉ 1.5s giữa các lần bóc để Shopee không bao giờ bắn Captcha.
+// 3. Tần suất hỏi việc cực nhạy (600ms) giúp mở tab gần như tức thì khi người dùng dán link.
 
 const DEFAULT_BACKEND_URL = "https://api-dealping-be-flashsale.onrender.com";
 const workerTabs = new Map(); // tabId -> { itemId, timeoutId }
 let isProcessingJob = false;
+let cooldownTimer = null;
+
+function releaseJobWithCooldown() {
+  if (cooldownTimer) clearTimeout(cooldownTimer);
+  cooldownTimer = setTimeout(() => {
+    isProcessingJob = false;
+    cooldownTimer = null;
+  }, 1500); // Nghỉ 1.5s cooldown trước khi nhận task tiếp theo
+}
 
 function getWorkerConfig() {
   return new Promise((resolve) => {
@@ -39,7 +47,42 @@ async function submitPriceToBackend(backendUrl, payload) {
   }
 }
 
-// Lắng nghe dữ liệu DOM từ content.js gửi về ngay khi trang Shopee/TikTok vừa load xong
+// Cầu chì chống kẹt khi gặp Captcha / Verify / Login Redirect
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (workerTabs.has(tabId)) {
+    const currentUrl = (changeInfo.url || (tab && tab.url) || "").toLowerCase();
+    if (
+      currentUrl.includes("/verify") ||
+      currentUrl.includes("/captcha") ||
+      currentUrl.includes("/buyer/login")
+    ) {
+      console.warn("[DealPing Worker] Phát hiện Captcha/Login redirect, đóng tab ngay:", currentUrl);
+      const jobInfo = workerTabs.get(tabId);
+      if (jobInfo && jobInfo.timeoutId) {
+        clearTimeout(jobInfo.timeoutId);
+      }
+      workerTabs.delete(tabId);
+      releaseJobWithCooldown();
+      try {
+        chrome.tabs.remove(tabId);
+      } catch (e) {}
+    }
+  }
+});
+
+// Nếu tab bị tắt thủ công bởi người dùng
+chrome.tabs.onRemoved.addListener((tabId) => {
+  if (workerTabs.has(tabId)) {
+    const jobInfo = workerTabs.get(tabId);
+    if (jobInfo && jobInfo.timeoutId) {
+      clearTimeout(jobInfo.timeoutId);
+    }
+    workerTabs.delete(tabId);
+    releaseJobWithCooldown();
+  }
+});
+
+// Lắng nghe dữ liệu DOM từ content.js gửi về ngay khi trang Shopee/TikTok vừa bóc xong giá
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message && message.type === "DEALPING_DOM_SCRAPED" && message.data) {
     const scrapedData = message.data;
@@ -49,7 +92,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // 1. Gửi dữ liệu giá thực tế (Giá Sau Voucher) về Backend Render
       await submitPriceToBackend(config.backendUrl, scrapedData);
 
-      // 2. Lưu vào storage để Popup hiển thị trực tiếp cho Huy xem
+      // 2. Lưu vào storage để Popup hiển thị trực tiếp
       chrome.storage.local.set({
         lastCapturedDealPingProduct: {
           productName: scrapedData.productName || "Sản phẩm sàn TMĐT",
@@ -59,6 +102,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           tier1: Math.round(Number(scrapedData.detectedPrice) * 0.9),
           tier2: Math.round(Number(scrapedData.detectedPrice) * 0.72),
           url: scrapedData.url,
+          imageUrl: scrapedData.imageUrl,
           capturedAt: new Date().toLocaleTimeString("vi-VN")
         }
       });
@@ -70,7 +114,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           clearTimeout(jobInfo.timeoutId);
         }
         workerTabs.delete(tabId);
-        isProcessingJob = false;
+        releaseJobWithCooldown();
 
         const nextStats = {
           completed: (config.stats.completed || 0) + 1,
@@ -104,7 +148,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             chrome.tabs.remove(tabId);
           } catch (e) {}
         }
-      }, 15000);
+      }, 4500);
 
       workerTabs.set(tabId, {
         itemId: sampleId,
@@ -117,7 +161,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Vòng lặp hỏi Backend mỗi 2.5 giây khi bật chế độ Máy Trạm (Auto Worker)
+// Vòng lặp hỏi Backend mỗi 600ms khi rảnh (Auto Worker)
 async function pollPendingTasks() {
   if (isProcessingJob) return;
 
@@ -137,24 +181,24 @@ async function pollPendingTasks() {
 
     isProcessingJob = true;
 
-    // Mở tab Shopee/TikTok ở chế độ chạy ngầm (active: false) để không làm phiền người dùng
+    // Mở tab Shopee/TikTok ở chế độ chạy ngầm (active: false)
     chrome.tabs.create({ url: task.url, active: false }, (tab) => {
       if (!tab || !tab.id) {
-        isProcessingJob = false;
+        releaseJobWithCooldown();
         return;
       }
 
       const tabId = tab.id;
-      // Bảo hiểm an toàn: Tự động đóng tab sau 12 giây nếu mạng lag hoặc link lỗi
+      // Timeout 4500ms: Tự động đóng tab sau 4.5s để giải phóng RAM nhanh và nhường cho Backend fallback
       const timeoutId = setTimeout(() => {
         if (workerTabs.has(tabId)) {
           workerTabs.delete(tabId);
-          isProcessingJob = false;
+          releaseJobWithCooldown();
           try {
             chrome.tabs.remove(tabId);
           } catch (e) {}
         }
-      }, 12000);
+      }, 4500);
 
       workerTabs.set(tabId, {
         itemId: task.itemId || null,
@@ -162,8 +206,9 @@ async function pollPendingTasks() {
       });
     });
   } catch (err) {
-    isProcessingJob = false;
+    releaseJobWithCooldown();
   }
 }
 
-setInterval(pollPendingTasks, 2500);
+// Hạ nhịp hỏi việc từ 2500ms xuống 600ms
+setInterval(pollPendingTasks, 600);

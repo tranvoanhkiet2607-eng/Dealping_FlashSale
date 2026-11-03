@@ -44,10 +44,13 @@
         const json = await cloned.json();
         if (json && json.data) {
           // Ghi đè Giá thực tế sau Voucher (ví dụ 244.072₫ hoặc 29.000₫) thẳng vào dữ liệu trả về cho Web App
-          json.data.price = cached.detectedPrice;
+          const origP = (cached.originalStrikePrice && cached.originalStrikePrice > cached.detectedPrice)
+            ? cached.originalStrikePrice
+            : (json.data.originalPrice && json.data.originalPrice > cached.detectedPrice ? json.data.originalPrice : Math.round(cached.detectedPrice * 1.15));
+          json.data.price = origP;          // Giá sàn niêm yết (VD: 279.000đ)
           json.data.currentPrice = cached.detectedPrice;
-          json.data.originalPrice = cached.detectedPrice;
-          json.data.voucherPrice = cached.detectedPrice;
+          json.data.originalPrice = origP;
+          json.data.voucherPrice = cached.detectedPrice; // Giá sau voucher (VD: 244.072đ)
           if (
             cached.productName &&
             (!json.data.productName ||
@@ -55,6 +58,9 @@
               json.data.productName.includes("Sản phẩm"))
           ) {
             json.data.productName = cached.productName;
+          }
+          if (cached.imageUrl && !json.data.imageUrl) {
+            json.data.imageUrl = cached.imageUrl;
           }
           console.log(
             "[DealPing Bridge] Đã bơm giá thực tế từ màn hình Shopee vào Ô theo dõi Web App:",
@@ -70,16 +76,19 @@
       } catch (err) {
         // Ngay cả khi Server Backend bị sập/ngủ đông, vẫn trả về dữ liệu chuẩn từ Extension cho Web App!
         if (cached) {
+          const fallbackOrigP = (cached.originalStrikePrice && cached.originalStrikePrice > cached.detectedPrice)
+            ? cached.originalStrikePrice
+            : Math.round(cached.detectedPrice * 1.15);
           return new Response(
             JSON.stringify({
               status: "success",
               data: {
                 productName: cached.productName,
-                price: cached.detectedPrice,
+                price: fallbackOrigP,
                 currentPrice: cached.detectedPrice,
-                originalPrice: cached.detectedPrice,
+                originalPrice: fallbackOrigP,
                 voucherPrice: cached.detectedPrice,
-                imageUrl: null,
+                imageUrl: cached.imageUrl || null,
                 affiliateUrl: cached.url,
                 variants: []
               }

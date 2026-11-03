@@ -72,6 +72,12 @@ const simulateDrop = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: item, message: "Đã kích hoạt sập giá trong DB" });
 });
 
+const getLiveVoucher = asyncHandler(async (req, res) => {
+  const { itemId } = req.params;
+  const data = await trackingItemsService.getLiveVoucher(itemId);
+  res.status(200).json({ success: true, ...data });
+});
+
 module.exports = {
   create,
   list,
@@ -82,5 +88,6 @@ module.exports = {
   getBatch,
   updateTargetPrice,
   simulateDrop,
+  getLiveVoucher,
 };
 

@@ -97,12 +97,12 @@ export function SlotCard({
       ? "border-pink-500/70 border-2 bg-gradient-to-b from-pink-500/15 to-purple-500/10"
       : "border-amber-500/70 border-2 bg-gradient-to-b from-amber-500/15 to-rose-500/10"
 
-  // 1. Tính toán giá Nấc 1 và Nấc 2 (chống lỗi Nấc 1 đắt hơn giá sàn)
+  // 1. Tính toán giá Nấc 1 và Nấc 2 (ưu tiên voucherPrice làm mốc tính Nấc 1 và Nấc 2 để luôn thấp hơn Giá Sau Voucher)
   const currentPrice =
-    basePrice && basePrice > 0
-      ? basePrice
-      : voucherPrice && voucherPrice > 0
-        ? voucherPrice
+    voucherPrice && voucherPrice > 0
+      ? voucherPrice
+      : basePrice && basePrice > 0
+        ? basePrice
         : pricingService.parseVND(previewPrice || "") ||
           pricingService.parseVND(productPrice || "") ||
           0
@@ -110,9 +110,11 @@ export function SlotCard({
   const originalPriceRaw =
     propOriginalPrice && propOriginalPrice > 0
       ? propOriginalPrice
-      : currentPrice > 0
-        ? currentPrice
-        : 0
+      : basePrice && basePrice > 0
+        ? basePrice
+        : currentPrice > 0
+          ? currentPrice
+          : 0
 
   // Giá gốc luôn >= giá sàn (tránh dữ liệu API trả về giá gốc < giá hiện tại)
   const originalPrice = Math.max(originalPriceRaw, currentPrice)
@@ -232,15 +234,31 @@ export function SlotCard({
                           {previewName}
                         </h5>
                         <div className="flex items-center flex-wrap gap-1.5 text-[10.5px] mt-0.5">
-                          <span className="font-bold text-pink-500 dark:text-pink-400">
-                            Giá gốc niêm yết sàn:
-                          </span>
-                          <span className="font-black text-xs text-amber-500 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-400/20 px-2 py-0.5 rounded-md border border-amber-500/30 tracking-tight shadow-xs">
-                            {previewPrice || (currentPrice > 0 ? pricingService.formatVND(currentPrice) : "Đang lấy giá...")}
-                          </span>
-                          <span className="text-[8.5px] font-normal text-slate-500 dark:text-white/60">
-                            (Chưa trừ mã Voucher riêng trên máy bạn)
-                          </span>
+                          {voucherPrice && voucherPrice > 0 && (voucherPrice < originalPrice || (previewPrice && voucherPrice < (pricingService.parseVND(previewPrice) || 0))) ? (
+                            <>
+                              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                Giá sau Voucher:
+                              </span>
+                              <span className="font-black text-xs text-emerald-600 dark:text-emerald-300 bg-emerald-500/15 dark:bg-emerald-400/20 px-2 py-0.5 rounded-md border border-emerald-500/30 tracking-tight shadow-xs">
+                                {pricingService.formatVND(voucherPrice)} 🎟️
+                              </span>
+                              <span className="text-[9px] font-medium text-slate-500 dark:text-white/60 line-through">
+                                (Giá sàn: {previewPrice || pricingService.formatVND(originalPrice)})
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-bold text-pink-500 dark:text-pink-400">
+                                Giá gốc niêm yết sàn:
+                              </span>
+                              <span className="font-black text-xs text-amber-500 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-400/20 px-2 py-0.5 rounded-md border border-amber-500/30 tracking-tight shadow-xs">
+                                {previewPrice || (currentPrice > 0 ? pricingService.formatVND(currentPrice) : "Đang lấy giá...")}
+                              </span>
+                              <span className="text-[8.5px] font-normal text-slate-500 dark:text-white/60">
+                                (Chưa trừ mã Voucher riêng trên máy bạn)
+                              </span>
+                            </>
+                          )}
                         </div>
                       </>
                     )}
@@ -330,8 +348,8 @@ export function SlotCard({
                     <span>Hoặc tinh chỉnh số tiền cụ thể:</span>
                     {currentPrice > 0 && (
                       <span className="text-slate-800 dark:text-white/90 font-bold">
-                        Giá gốc niêm yết:{" "}
-                        <b className="text-amber-500 dark:text-amber-300 font-black">
+                        {voucherPrice && voucherPrice > 0 ? "Giá sau Voucher: " : "Giá gốc niêm yết: "}
+                        <b className={voucherPrice && voucherPrice > 0 ? "text-emerald-500 dark:text-emerald-300 font-black" : "text-amber-500 dark:text-amber-300 font-black"}>
                           {pricingService.formatVND(currentPrice)}
                         </b>
                       </span>
