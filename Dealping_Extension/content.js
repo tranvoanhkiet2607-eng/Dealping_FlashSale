@@ -310,20 +310,97 @@
   let lastItemId = null;
   let scanInterval = null;
 
-  function scanAndCache() {
+  // Tự động chọn phân loại đầu tiên còn hàng khi mở trang để tránh bẫy giá mồi
+  function autoSelectFirstVariation() {
+    try {
+      const variationButtons = Array.from(
+        document.querySelectorAll(
+          'button.product-variation, button[class*="product-variation"], button[class*="variation"]'
+        )
+      );
+
+      if (variationButtons.length === 0) return false;
+
+      // Kiểm tra xem đã có nút nào đang được chọn chưa (class selected / dấu tích / aria-selected)
+      const isSelected = (btn) => {
+        const cls = btn.className || "";
+        const ariaSel = btn.getAttribute("aria-selected");
+        const ariaCheck = btn.getAttribute("aria-checked");
+        const hasTick = btn.querySelector('[class*="tick"], svg, [class*="check"]');
+        return (
+          cls.includes("selected") ||
+          ariaSel === "true" ||
+          ariaCheck === "true" ||
+          Boolean(hasTick)
+        );
+      };
+
+      const hasAnySelected = variationButtons.some(isSelected);
+      if (hasAnySelected) return false;
+
+      const isAvailable = (btn) => {
+        const cls = btn.className || "";
+        const ariaDisabled = btn.getAttribute("aria-disabled");
+        return !btn.disabled && !cls.includes("disabled") && ariaDisabled !== "true";
+      };
+
+      // Thử tìm theo từng nhóm phân loại (màu sắc / phiên bản...)
+      const parentGroups = new Set(
+        variationButtons.map((btn) => btn.parentElement).filter(Boolean)
+      );
+      let clickedAny = false;
+
+      if (parentGroups.size > 1) {
+        parentGroups.forEach((group) => {
+          const groupButtons = Array.from(
+            group.querySelectorAll(
+              'button.product-variation, button[class*="product-variation"], button[class*="variation"]'
+            )
+          );
+          const groupSelected = groupButtons.some(isSelected);
+          if (!groupSelected) {
+            const firstInGroup = groupButtons.find(isAvailable);
+            if (firstInGroup) {
+              firstInGroup.click();
+              clickedAny = true;
+            }
+          }
+        });
+      }
+
+      if (!clickedAny) {
+        const firstAvailable = variationButtons.find(isAvailable);
+        if (firstAvailable) {
+          firstAvailable.click();
+          clickedAny = true;
+        }
+      }
+
+      if (clickedAny) {
+        console.log(
+          "[DealPing] Đã tự động click chọn phân loại đầu tiên còn hàng để chống giá mồi!"
+        );
+      }
+      return clickedAny;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function scanAndCache(isManualClick = false) {
     scanAttempts++;
     const data = extractShopeeProductData();
     if (!data) return;
 
-    // Trong 4 lần quét đầu tiên (tức ~2.4s đầu):
+    // Trong 4 lần quét đầu tiên (tức ~2.4s đầu) trừ khi người dùng click tay:
     // CHỈ gửi kết quả về background.js nếu tìm thấy nhãn "Giá sau voucher" (data.isVoucherPrice === true).
     // Hễ thấy isVoucherPrice === true là bắn về và đóng tab ngay lập tức!
-    if (scanAttempts <= 4 && !data.isVoucherPrice) {
+    if (!isManualClick && scanAttempts <= 4 && !data.isVoucherPrice) {
       return;
     }
 
     // Từ lần 5 trở đi (sau 2.5s, trang đã load 100%) mà món hàng không có nhãn "Giá sau voucher",
-    // HOẶC nếu đã bắt được isVoucherPrice === true ở các lần quét:
+    // HOẶC nếu đã bắt được isVoucherPrice === true ở các lần quét / click tay:
     if (data.detectedPrice !== lastPrice || data.itemId !== lastItemId) {
       lastPrice = data.detectedPrice;
       lastItemId = data.itemId;
@@ -352,21 +429,29 @@
     }
   }
 
-  // 1. Cuộn nhẹ sau 500ms để kích hoạt Shopee render khung Voucher và giả lập người dùng thật
+  // 1. Tự động click chọn Phân loại đầu tiên còn hàng ở 400ms (và retry ở 750ms) để chống bẫy giá mồi
+  setTimeout(() => {
+    autoSelectFirstVariation();
+  }, 400);
+  setTimeout(() => {
+    autoSelectFirstVariation();
+  }, 750);
+
+  // 2. Cuộn nhẹ sau 500ms để kích hoạt Shopee render khung Voucher và giả lập người dùng thật
   setTimeout(() => {
     try {
       window.scrollBy({ top: 100, behavior: "smooth" });
     } catch (e) {}
   }, 500);
 
-  // 2. Nhịp quét: lần đầu ở 900ms, sau đó mỗi 500ms lặp lại
-  setTimeout(scanAndCache, 900);
-  scanInterval = setInterval(scanAndCache, 500);
+  // 3. Nhịp quét: lần đầu ở 900ms (đã đợi Shopee nhảy giá phân loại), sau đó mỗi 500ms lặp lại
+  setTimeout(() => scanAndCache(false), 900);
+  scanInterval = setInterval(() => scanAndCache(false), 500);
 
-  // 3. Lắng nghe sự kiện click để khi người dùng đổi phân loại (màu/bản/size),
+  // 4. Lắng nghe sự kiện click để khi người dùng đổi phân loại (màu/bản/size),
   // Extension lập tức quét lại giá mới và cập nhật Backend + Storage
   document.addEventListener("click", () => {
-    setTimeout(scanAndCache, 350);
-    setTimeout(scanAndCache, 800);
+    setTimeout(() => scanAndCache(true), 350);
+    setTimeout(() => scanAndCache(true), 800);
   });
 })();

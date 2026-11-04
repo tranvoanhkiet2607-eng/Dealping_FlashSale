@@ -160,10 +160,13 @@ export function useTrackingSlots(
                   : urlParserService.extractCleanProductName(currentInput)
 
               const rawPrice = Number(data.price) || Number(data.currentPrice) || 0
-              const origPrice = Number(data.originalPrice) || Number(data.original_price) || rawPrice
+              let origPrice = Number(data.originalPrice) || Number(data.original_price) || rawPrice
               const initialVoucher = data.voucherPrice && Number(data.voucherPrice) > 0 ? Number(data.voucherPrice) : null
+              if (initialVoucher && origPrice <= initialVoucher) {
+                origPrice = Math.round((initialVoucher / 0.85) / 1000) * 1000
+              }
               const effectivePrice = initialVoucher || rawPrice
-              const autoTarget = pricingService.calculateDefaultTarget(effectivePrice, origPrice)
+              const autoTarget = pricingService.calculateDefaultTarget(effectivePrice, origPrice, initialVoucher)
 
               let firstVariant = ""
               let variantOptions: any[] = []
@@ -208,12 +211,16 @@ export function useTrackingSlots(
                     if (detected && detected > 0 && isSubscribed) {
                       setSlot((prev) => {
                         if (prev.input !== currentInput) return prev
-                        const effectiveOrig = prev.originalPrice || origPrice || detected
-                        const newTarget = pricingService.calculateDefaultTarget(detected, effectiveOrig)
+                        let effectiveOrig = prev.originalPrice || origPrice || detected
+                        if (effectiveOrig <= detected) {
+                          effectiveOrig = Math.round((detected / 0.85) / 1000) * 1000
+                        }
+                        const newTarget = pricingService.calculateDefaultTarget(detected, effectiveOrig, detected)
                         return {
                           ...prev,
                           voucherPrice: detected,
                           basePrice: detected,
+                          originalPrice: effectiveOrig,
                           targetPrice: pricingService.formatInputNumber(newTarget),
                         }
                       })

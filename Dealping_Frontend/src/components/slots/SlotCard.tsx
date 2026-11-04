@@ -107,7 +107,7 @@ export function SlotCard({
           pricingService.parseVND(productPrice || "") ||
           0
 
-  const originalPriceRaw =
+  let originalPriceRaw =
     propOriginalPrice && propOriginalPrice > 0
       ? propOriginalPrice
       : basePrice && basePrice > 0
@@ -116,11 +116,19 @@ export function SlotCard({
           ? currentPrice
           : 0
 
+  // Chặn bẫy "Shopee ẩn giá gạch ngang khi Flash Sale + Giá Sau Voucher":
+  // Nếu Shopee ẩn giá gốc gạch ngang làm originalPrice <= voucherPrice,
+  // tự động ước tính hiển thị originalPrice = Math.round((voucherPrice / 0.85) / 1000) * 1000
+  // để không bao giờ bị lỗi chữ Giá sau Voucher trùng Giá sàn!
+  if (voucherPrice && voucherPrice > 0 && originalPriceRaw <= voucherPrice) {
+    originalPriceRaw = Math.round((voucherPrice / 0.85) / 1000) * 1000
+  }
+
   // Giá gốc luôn >= giá sàn (tránh dữ liệu API trả về giá gốc < giá hiện tại)
   const originalPrice = Math.max(originalPriceRaw, currentPrice)
 
   // Tính theo PricingService (2 Kịch bản thông minh)
-  const tiers = pricingService.calculateTiers(originalPrice, currentPrice)
+  const tiers = pricingService.calculateTiers(originalPrice, currentPrice, voucherPrice)
   const nac1_price = currentPrice > 0 ? tiers.nac1_price : null
   const nac1_label = tiers.nac1_label
   const drop1 = tiers.drop1
