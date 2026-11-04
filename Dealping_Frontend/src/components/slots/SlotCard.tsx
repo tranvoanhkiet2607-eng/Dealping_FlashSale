@@ -119,13 +119,24 @@ export function SlotCard({
   // Giá gốc luôn >= giá sàn (tránh dữ liệu API trả về giá gốc < giá hiện tại)
   const originalPrice = Math.max(originalPriceRaw, currentPrice)
 
-  // Tính theo PricingService (Chế độ Săn Đại Sale Mức 2: -28%)
+  // Tính theo PricingService (2 Kịch bản thông minh)
   const tiers = pricingService.calculateTiers(originalPrice, currentPrice)
+  const nac1_price = currentPrice > 0 ? tiers.nac1_price : null
+  const nac1_label = tiers.nac1_label
+  const drop1 = tiers.drop1
+
   const nac2_price = currentPrice > 0 ? tiers.nac2_price : null
   const nac2_label = tiers.nac2_label
   const drop2 = tiers.drop2
 
   const selectedTargetNum = pricingService.parseVND(targetPrice || "")
+  const isTier1Active = Boolean(
+    nac1_price &&
+      selectedTargetNum > 0 &&
+      (selectedTargetNum === nac1_price ||
+        Math.abs(selectedTargetNum - nac1_price) <=
+          (currentPrice > 1000000 ? 50000 : 500))
+  )
   const isTier2Active = Boolean(
     nac2_price &&
       selectedTargetNum > 0 &&
@@ -137,7 +148,9 @@ export function SlotCard({
   const discountPct =
     currentPrice > 0 && selectedTargetNum > 0 && currentPrice >= selectedTargetNum
       ? Math.max(0, Math.round(((currentPrice - selectedTargetNum) / currentPrice) * 100))
-      : 28
+      : isTier1Active
+        ? tiers.nac1_discount_pct
+        : tiers.nac2_discount_pct
 
   const history = priceHistory
 
@@ -234,7 +247,7 @@ export function SlotCard({
                           {previewName}
                         </h5>
                         <div className="flex items-center flex-wrap gap-1.5 text-[10.5px] mt-0.5">
-                          {voucherPrice && voucherPrice > 0 && (voucherPrice < originalPrice || (previewPrice && voucherPrice < (pricingService.parseVND(previewPrice) || 0))) ? (
+                          {voucherPrice && voucherPrice > 0 && originalPrice > voucherPrice ? (
                             <>
                               <span className="font-bold text-emerald-600 dark:text-emerald-400">
                                 Giá sau Voucher:
@@ -243,7 +256,7 @@ export function SlotCard({
                                 {pricingService.formatVND(voucherPrice)} 🎟️
                               </span>
                               <span className="text-[9px] font-medium text-slate-500 dark:text-white/60 line-through">
-                                (Giá sàn: {previewPrice || pricingService.formatVND(originalPrice)})
+                                (Giá gốc: {pricingService.formatVND(originalPrice)})
                               </span>
                             </>
                           ) : (
@@ -269,7 +282,7 @@ export function SlotCard({
               <div className="bg-slate-100/80 dark:bg-black/5 rounded-[18px] p-2.5 text-[10px] space-y-2 border border-slate-200/60 dark:border-transparent">
                 <div className="flex justify-between items-center mb-0.5">
                   <span className="font-bold text-slate-800 dark:text-white/80 text-[10px]">
-                    🎯 Chế độ Săn Đại Sale món {slotNum}:
+                    🎯 Chọn nấc săn giá món {slotNum}:
                   </span>
                   <span
                     className={`font-black text-[10px] ${
@@ -284,61 +297,131 @@ export function SlotCard({
                   </span>
                 </div>
 
-                {/* Chế độ Săn Đại Sale (Mức 2 duy nhất) */}
-                <button
-                  type="button"
-                  title={nac2_label}
-                  onClick={() => {
-                    if (nac2_price) {
-                      onTargetPriceChange?.(
-                        pricingService.formatInputNumber(nac2_price)
-                      )
-                    }
-                  }}
-                  className={`w-full p-2.5 rounded-xl border text-left transition-all active:scale-[0.99] cursor-pointer flex flex-col justify-between ${
-                    isTier2Active
-                      ? "bg-emerald-500/20 border-emerald-500 text-emerald-950 dark:text-emerald-100 shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-1 ring-emerald-400/60"
-                      : "bg-white/80 dark:bg-black/20 border-slate-300/80 dark:border-white/10 text-slate-800 dark:text-white/70 hover:bg-white dark:hover:bg-black/30 hover:border-slate-400 dark:hover:border-white/20 shadow-xs"
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-[11px] font-black text-emerald-700 dark:text-emerald-300 flex items-center space-x-1.5">
-                      <span>🔥</span>
-                      <span>Săn Đại Sale (-28%)</span>
-                    </span>
-                    <span className="text-[8.5px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold flex items-center space-x-1">
-                      <span>⭐</span>
-                      <span>Gợi ý tốt nhất</span>
-                    </span>
+                {/* Banner chẩn đoán 2 Kịch bản thông minh */}
+                {currentPrice > 0 && (
+                  <div
+                    className={`p-2 rounded-xl text-[9.5px] font-semibold border flex items-start space-x-1.5 ${
+                      tiers.isDeepDiscount
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+                        : "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300"
+                    }`}
+                  >
+                    <span className="leading-snug">{tiers.scenarioAdvice}</span>
                   </div>
-                  <p className="text-[9px] font-medium text-slate-700 dark:text-emerald-100/90 mt-1.5 leading-snug">
-                    Săn Đại Sale khi Shop giảm thêm{" "}
-                    <span className="text-emerald-700 dark:text-emerald-300 font-extrabold text-[10px]">
-                      {pricingService.formatVND(drop2)}
-                    </span>{" "}
-                    (-28%)
-                    <span className="text-slate-500 dark:text-white/60 ml-1">
-                      (Chế độ Mua Chậm Giá Hời)
-                    </span>
-                  </p>
-                  {nac2_price && (
-                    <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-emerald-500/20">
-                      <span className="text-[9.5px] font-bold text-slate-600 dark:text-slate-300">
-                        Giá mục tiêu rình sale:
-                      </span>
-                      <span className="text-xs font-black text-emerald-600 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded">
-                        {pricingService.formatVND(nac2_price)}
-                      </span>
-                    </div>
-                  )}
-                </button>
+                )}
 
-                {/* Ghi chú Nấc 2 */}
-                <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[9px] text-emerald-800 dark:text-emerald-300 flex items-start space-x-1.5">
+                {/* 2 Nút chọn: Nấc 1 & Nấc 2 */}
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Nấc 1 */}
+                  <button
+                    type="button"
+                    title={nac1_label}
+                    onClick={() => {
+                      if (nac1_price) {
+                        onTargetPriceChange?.(
+                          pricingService.formatInputNumber(nac1_price)
+                        )
+                      }
+                    }}
+                    className={`p-2 rounded-xl border text-left transition-all active:scale-[0.98] cursor-pointer flex flex-col justify-between ${
+                      isTier1Active
+                        ? "bg-amber-500/20 border-amber-500 text-amber-950 dark:text-amber-100 shadow-[0_0_12px_rgba(245,158,11,0.25)] ring-1 ring-amber-400/60"
+                        : "bg-white/80 dark:bg-black/20 border-slate-300/80 dark:border-white/10 text-slate-800 dark:text-white/70 hover:bg-white dark:hover:bg-black/30 hover:border-slate-400 dark:hover:border-white/20 shadow-xs"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[10px] font-black text-amber-700 dark:text-amber-300 flex items-center space-x-1">
+                        <span>⚡</span>
+                        <span>Nấc 1 (-{tiers.nac1_discount_pct}%)</span>
+                      </span>
+                      {isTier1Active && (
+                        <span className="text-[7.5px] bg-amber-400/30 text-amber-800 dark:text-amber-200 px-1 py-0.5 rounded font-bold">
+                          Đang chọn
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[8.5px] font-medium text-slate-700 dark:text-white/70 mt-1 leading-tight">
+                      {tiers.isDeepDiscount ? "Áp thêm mã/xu" : "Săn Sale ngắn"} giảm{" "}
+                      <b className="text-amber-700 dark:text-amber-300 font-extrabold">
+                        {pricingService.formatVND(drop1)}
+                      </b>
+                    </p>
+                    {nac1_price && (
+                      <div className="flex items-center justify-between mt-1.5 pt-1 border-t border-amber-500/20">
+                        <span className="text-[8px] font-semibold text-slate-500 dark:text-white/60">
+                          Mục tiêu:
+                        </span>
+                        <span className="text-[10px] font-black text-amber-700 dark:text-amber-300">
+                          {pricingService.formatVND(nac1_price)}
+                        </span>
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Nấc 2 */}
+                  <button
+                    type="button"
+                    title={nac2_label}
+                    onClick={() => {
+                      if (nac2_price) {
+                        onTargetPriceChange?.(
+                          pricingService.formatInputNumber(nac2_price)
+                        )
+                      }
+                    }}
+                    className={`p-2 rounded-xl border text-left transition-all active:scale-[0.98] cursor-pointer flex flex-col justify-between ${
+                      isTier2Active
+                        ? "bg-emerald-500/20 border-emerald-500 text-emerald-950 dark:text-emerald-100 shadow-[0_0_12px_rgba(16,185,129,0.25)] ring-1 ring-emerald-400/60"
+                        : "bg-white/80 dark:bg-black/20 border-slate-300/80 dark:border-white/10 text-slate-800 dark:text-white/70 hover:bg-white dark:hover:bg-black/30 hover:border-slate-400 dark:hover:border-white/20 shadow-xs"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 flex items-center space-x-1">
+                        <span>🔥</span>
+                        <span>Nấc 2 (-{tiers.nac2_discount_pct}%)</span>
+                      </span>
+                      {isTier2Active ? (
+                        <span className="text-[7.5px] bg-emerald-400/30 text-emerald-800 dark:text-emerald-200 px-1 py-0.5 rounded font-bold">
+                          Đang chọn
+                        </span>
+                      ) : (
+                        <span className="text-[7.5px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-1 rounded-full font-bold">
+                          ⭐ Gợi ý
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[8.5px] font-medium text-slate-700 dark:text-white/70 mt-1 leading-tight">
+                      {tiers.isDeepDiscount ? "Đỉnh Flash Sale" : "Đại Sale ngày đôi"} giảm{" "}
+                      <b className="text-emerald-700 dark:text-emerald-300 font-extrabold">
+                        {pricingService.formatVND(drop2)}
+                      </b>
+                    </p>
+                    {nac2_price && (
+                      <div className="flex items-center justify-between mt-1.5 pt-1 border-t border-emerald-500/20">
+                        <span className="text-[8px] font-semibold text-slate-500 dark:text-white/60">
+                          Mục tiêu:
+                        </span>
+                        <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300">
+                          {pricingService.formatVND(nac2_price)}
+                        </span>
+                      </div>
+                    )}
+                  </button>
+                </div>
+
+                {/* Ghi chú chiến lược canh giá */}
+                <div className="p-2 rounded-xl bg-slate-200/50 dark:bg-white/5 border border-slate-300/60 dark:border-white/10 text-[9px] text-slate-700 dark:text-slate-300 flex items-start space-x-1.5">
                   <span className="text-[11px] shrink-0">👉</span>
                   <span className="leading-tight font-medium">
-                    <b>Dự kiến chờ 2 - 4 ngày để rình đợt Sale lớn</b> (Chế độ
-                    "Mua Chậm Giá Hời").
+                    {tiers.isDeepDiscount ? (
+                      <>
+                        <b>Sản phẩm đã trợ giá tốt:</b> Có thể MUA NGAY hoặc đặt Nấc 1 / Nấc 2 để canh giờ vàng Flash Sale.
+                      </>
+                    ) : (
+                      <>
+                        <b>Chế độ "Mua Chậm Giá Hời":</b> Dự kiến chờ 2 - 4 ngày để rình đợt Sale lớn ngày đôi.
+                      </>
+                    )}
                   </span>
                 </div>
 

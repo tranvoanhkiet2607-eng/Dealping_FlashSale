@@ -169,9 +169,6 @@
             if (firstPrice) {
               detectedPrice = firstPrice;
               isVoucherPrice = true;
-              if (priceMatches.length > 1) {
-                originalStrikePrice = parseVndPrice(priceMatches[1]);
-              }
               break;
             }
           }
@@ -211,8 +208,10 @@
         if (el.childElementCount <= 1) {
           const style = window.getComputedStyle(el);
           if (
-            style.textDecorationLine &&
-            style.textDecorationLine.includes("line-through")
+            (style.textDecorationLine &&
+              style.textDecorationLine.includes("line-through")) ||
+            (style.textDecoration &&
+              style.textDecoration.includes("line-through"))
           ) {
             const p = parseVndPrice(el.textContent);
             if (p && (!detectedPrice || p > detectedPrice)) {
@@ -363,4 +362,11 @@
   // 2. Nhịp quét: lần đầu ở 900ms, sau đó mỗi 500ms lặp lại
   setTimeout(scanAndCache, 900);
   scanInterval = setInterval(scanAndCache, 500);
+
+  // 3. Lắng nghe sự kiện click để khi người dùng đổi phân loại (màu/bản/size),
+  // Extension lập tức quét lại giá mới và cập nhật Backend + Storage
+  document.addEventListener("click", () => {
+    setTimeout(scanAndCache, 350);
+    setTimeout(scanAndCache, 800);
+  });
 })();

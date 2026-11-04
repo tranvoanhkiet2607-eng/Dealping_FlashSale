@@ -11,6 +11,9 @@ export interface PriceTiers {
   nac2_discount_pct: number
   drop1: number
   drop2: number
+  isDeepDiscount: boolean
+  alreadyDiscountedPct: number
+  scenarioAdvice: string
 }
 
 export class PricingService {
@@ -46,35 +49,78 @@ export class PricingService {
 
   /**
    * Universal dynamic tier calculator:
-   * Săn mức giảm thêm (Delta VNĐ) từ currentPrice
+   * 2 Kịch bản thông minh (khớp 100% Slide 3 Canva):
+   * - Kịch bản A: Sản phẩm đang Flash Sale / có Voucher giảm sâu (alreadyDiscountedPct >= 15%)
+   *   Hạ tỷ lệ canh thêm: Nấc 1 (-6%) và Nấc 2 (-12%) sát giá thị trường.
+   * - Kịch bản B: Sản phẩm đang neo giá cao (alreadyDiscountedPct < 15%)
+   *   Giữ nguyên: Nấc 1 (-10% Săn Sale ngắn hạn) và Nấc 2 (-28% Săn Đại Sale ngày đôi).
    */
   public calculateTiers(originalPrice: number, currentPrice: number): PriceTiers {
     const validOrig = originalPrice > 0 ? originalPrice : currentPrice
     const validCurrent = currentPrice > 0 ? currentPrice : validOrig
 
-    // Mức 1 (-10%): Tính số tiền giảm thêm
-    const drop1 = Math.max(1000, Math.round((validCurrent * 0.10) / 1000) * 1000)
-    // Giá mục tiêu lưu xuống DB cho Bot canh: nac1_price = validCurrent - drop1
-    const nac1_price = Math.max(0, validCurrent - drop1)
-    // Nhãn hiển thị trên UI: Mức 1: Hú còi khi Shop giảm thêm ${this.formatVND(drop1)} (-10%)
-    const nac1_label = `Mức 1: Hú còi khi Shop giảm thêm ${this.formatVND(drop1)} (-10%)`
+    // Tính độ giảm hiện tại
+    const alreadyDiscountedPct =
+      validOrig > validCurrent
+        ? Math.round(((validOrig - validCurrent) / validOrig) * 100)
+        : 0
 
-    // Săn Đại Sale (-28%): Tính số tiền giảm thêm
-    const drop2 = Math.max(2000, Math.round((validCurrent * 0.28) / 1000) * 1000)
-    // Giá mục tiêu lưu xuống DB cho Bot canh: nac2_price = validCurrent - drop2
-    const nac2_price = Math.max(0, validCurrent - drop2)
-    // Nhãn hiển thị trên UI: Săn Đại Sale khi Shop giảm thêm ${this.formatVND(drop2)} (-28%)
-    const nac2_label = `Săn Đại Sale khi Shop giảm thêm ${this.formatVND(drop2)} (-28%)`
+    const isDeepDiscount = alreadyDiscountedPct >= 15
+
+    let drop1 = 0
+    let drop2 = 0
+    let nac1_price = 0
+    let nac2_price = 0
+    let nac1_label = ""
+    let nac2_label = ""
+    let nac1_discount_pct = 0
+    let nac2_discount_pct = 0
+    let scenarioAdvice = ""
+
+    if (isDeepDiscount) {
+      // Kịch bản A — Nếu sản phẩm ĐANG FLASH SALE / ĐÃ CÓ VOUCHER GIẢM SÂU (alreadyDiscountedPct >= 15)
+      // Không được trừ chồng -28% nữa! Hạ tỷ lệ canh thêm xuống mức hợp lý sát giá thị trường:
+      // Nấc 1 (Canh áp thêm mã phụ / xu: giảm thêm -6% từ validCurrent): drop1 = Math.max(1000, Math.round((validCurrent * 0.06) / 1000) * 1000)
+      nac1_discount_pct = 6
+      drop1 = Math.max(1000, Math.round((validCurrent * 0.06) / 1000) * 1000)
+      nac1_price = Math.max(0, validCurrent - drop1)
+      nac1_label = `Mức 1: Canh áp thêm mã phụ / xu giảm thêm ${this.formatVND(drop1)} (-6%)`
+
+      // Nấc 2 (Canh đỉnh Flash Sale kế tiếp: giảm thêm -12% từ validCurrent): drop2 = Math.max(2000, Math.round((validCurrent * 0.12) / 1000) * 1000)
+      nac2_discount_pct = 12
+      drop2 = Math.max(2000, Math.round((validCurrent * 0.12) / 1000) * 1000)
+      nac2_price = Math.max(0, validCurrent - drop2)
+      nac2_label = `Mức 2: Canh đỉnh Flash Sale kế tiếp giảm thêm ${this.formatVND(drop2)} (-12%)`
+
+      scenarioAdvice = "✅ Đang có Flash Sale / Voucher trợ giá tốt — Có thể MUA NGAY hoặc canh giảm nhẹ thêm!"
+    } else {
+      // Kịch bản B — Nếu sản phẩm ĐANG NEO GIÁ CAO (alreadyDiscountedPct < 15, chưa có sale sâu):
+      // Giữ nguyên 2 mức: Nấc 1 (-10% Săn Sale ngắn hạn) và Nấc 2 (-28% Săn Đại Sale ngày đôi)
+      nac1_discount_pct = 10
+      drop1 = Math.max(1000, Math.round((validCurrent * 0.10) / 1000) * 1000)
+      nac1_price = Math.max(0, validCurrent - drop1)
+      nac1_label = `Mức 1: Săn Sale ngắn hạn giảm thêm ${this.formatVND(drop1)} (-10%)`
+
+      nac2_discount_pct = 28
+      drop2 = Math.max(2000, Math.round((validCurrent * 0.28) / 1000) * 1000)
+      nac2_price = Math.max(0, validCurrent - drop2)
+      nac2_label = `Mức 2: Săn Đại Sale ngày đôi giảm thêm ${this.formatVND(drop2)} (-28%)`
+
+      scenarioAdvice = "⚠️ Giá đang neo ở mức niêm yết — Khuyên bật Radar chờ đợt Sale!"
+    }
 
     return {
       nac1_price,
       nac2_price,
       nac1_label,
       nac2_label,
-      nac1_discount_pct: 10,
-      nac2_discount_pct: 28,
+      nac1_discount_pct,
+      nac2_discount_pct,
       drop1,
       drop2,
+      isDeepDiscount,
+      alreadyDiscountedPct,
+      scenarioAdvice,
     }
   }
 
